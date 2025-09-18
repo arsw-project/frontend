@@ -7,8 +7,8 @@ export function meta() {
 
 export default function Home() {
 	return (
-		<main className="w-dvw h-dvh grid place-items-center">
-			<h1 className="text-4xl font-bold">ARSW Project - Frontend</h1>
+		<main className="grid h-dvh w-dvw place-items-center">
+			<h1 className="font-bold text-4xl">ARSW Project - Frontend</h1>
 		</main>
 	);
 }
