@@ -1,0 +1,18 @@
+# Node modules
+/node_modules/
+
+# Build output
+/build/
+dist/
+
+# VS Code settings
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# React Router
+/.react-router/
+
+# pnpm workspace file
+pnpm-workspace.yaml
