@@ -16,86 +16,51 @@ import {
 	LockIcon,
 } from '@phosphor-icons/react';
 import { dataAttr } from '@shared/utility/props';
-import { memo, useCallback, useMemo, useState } from 'react';
-
-const emailRegex =
-	/^(?:[a-zA-Z0-9_'^&/+-])+(?:\.(?:[a-zA-Z0-9_'^&/+-])+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+import { useForm } from '@tanstack/react-form';
+import { useMutation } from '@tanstack/react-query';
+import { type FormEvent, memo, useCallback } from 'react';
+import { LoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-	const [remember, setRemember] = useState(false);
-	const [showPassword, setShowPassword] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
-	const [touched, setTouched] = useState<{ email: boolean; password: boolean }>(
-		{ email: false, password: false },
-	);
+	const loginMutation = useMutation({
+		mutationKey: ['login'],
+		mutationFn: async () => {
+			// Simulate a login API call
+			return new Promise((resolve) => setTimeout(resolve, 2000));
+		},
+	});
 
-	const isEmailValid = useMemo(() => emailRegex.test(email.trim()), [email]);
-	const isPasswordValid = useMemo(
-		() => password.trim().length >= 6,
-		[password],
-	);
-	const isFormValid = useMemo(
-		() => isEmailValid && isPasswordValid,
-		[isEmailValid, isPasswordValid],
-	);
-
-	const emailError = useMemo(() => {
-		if (!touched.email) return undefined;
-		if (!email) return 'Email is required';
-		if (!isEmailValid) return 'Enter a valid email';
-		return undefined;
-	}, [email, isEmailValid, touched.email]);
-
-	const passwordError = useMemo(() => {
-		if (!touched.password) return undefined;
-		if (!password) return 'Password is required';
-		if (!isPasswordValid) return 'Minimum 6 characters';
-		return undefined;
-	}, [password, isPasswordValid, touched.password]);
-
-	const handleSubmit = useCallback(
-		async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
-			setTouched({ email: true, password: true });
-			if (!isFormValid) return;
-
-			setIsLoading(true);
+	const loginForm = useForm({
+		defaultValues: {
+			email: '',
+			password: '',
+			rememberMe: false,
+			showPassword: false,
+		} as LoginFormState,
+		onSubmit: async (values) => {
 			try {
-				await new Promise((res) => setTimeout(res, 1200));
-				// navigate('/dashboard');
-			} finally {
-				setIsLoading(false);
+				await loginMutation.mutateAsync();
+				// Handle successful login (e.g., redirect to dashboard)
+				console.log('Login successful', values);
+			} catch (error) {
+				// Handle login error (e.g., show error message)
+				console.error('Login failed', error);
 			}
 		},
-		[isFormValid],
+	});
+
+	const handleSubmit = useCallback(
+		(event: FormEvent) => {
+			event.preventDefault();
+			event.stopPropagation();
+			loginForm.handleSubmit();
+		},
+		[loginForm],
 	);
-
-	const onEmailChange = useCallback((value: string) => {
-		setEmail(value);
-	}, []);
-
-	const onPasswordChange = useCallback((value: string) => {
-		setPassword(value);
-	}, []);
-
-	const onRememberChange = useCallback((value: boolean) => {
-		setRemember(value);
-	}, []);
 
 	const toggleShowPassword = useCallback(() => {
-		setShowPassword((v) => !v);
-	}, []);
-
-	const onEmailBlur = useCallback(
-		() => setTouched((t) => ({ ...t, email: true })),
-		[],
-	);
-	const onPasswordBlur = useCallback(
-		() => setTouched((t) => ({ ...t, password: true })),
-		[],
-	);
+		loginForm.setFieldValue('showPassword', (current) => !current);
+	}, [loginForm]);
 
 	return (
 		<div
@@ -126,73 +91,105 @@ const LoginPage = memo(() => {
 						validationBehavior="aria"
 						onSubmit={handleSubmit}
 						className={cn('space-y-5')}
-						data-loading={dataAttr(isLoading)}
+						data-loading={dataAttr(loginMutation.isPending)}
 					>
-						<Input
+						<loginForm.Field
 							name="email"
-							type="email"
-							label="Email"
-							placeholder="your@email.com"
-							value={email}
-							onValueChange={onEmailChange}
-							onBlur={onEmailBlur}
-							isRequired
-							isInvalid={!!emailError}
-							errorMessage={emailError}
-							variant="bordered"
-							color={emailError ? 'danger' : 'primary'}
-							startContent={
-								<EnvelopeSimpleIcon
-									size={18}
-									className={cn('text-foreground-500')}
+							validators={{ onBlur: LoginForm.validationRules.email }}
+						>
+							{(field) => (
+								<Input
+									label="Email"
+									placeholder="your@email.com"
+									variant="bordered"
+									name={field.name}
+									value={field.state.value}
+									onValueChange={field.handleChange}
+									onBlur={field.handleBlur}
+									isInvalid={!field.state.meta.isValid}
+									errorMessage={String(field.state.meta.errors)}
+									color={!field.state.meta.isValid ? 'danger' : 'primary'}
+									isRequired
+									startContent={
+										<EnvelopeSimpleIcon
+											size={18}
+											className={cn('text-foreground-500')}
+										/>
+									}
 								/>
-							}
-						/>
+							)}
+						</loginForm.Field>
 
-						<Input
+						<loginForm.Field
 							name="password"
-							type={showPassword ? 'text' : 'password'}
-							label="Password"
-							placeholder="Your password"
-							value={password}
-							onValueChange={onPasswordChange}
-							onBlur={onPasswordBlur}
-							isRequired
-							isInvalid={!!passwordError}
-							errorMessage={passwordError}
-							variant="bordered"
-							color={passwordError ? 'danger' : 'primary'}
-							startContent={
-								<LockIcon size={18} className={cn('text-foreground-500')} />
-							}
-							endContent={
-								<Button
-									isIconOnly
-									size="sm"
-									variant="light"
-									radius="full"
-									aria-label={showPassword ? 'Hide password' : 'Show password'}
-									onPress={toggleShowPassword}
-									className={cn('text-foreground-500')}
-								>
-									{showPassword ? (
-										<EyeSlashIcon size={18} />
-									) : (
-										<EyeIcon size={18} />
+							validators={{
+								onBlur: LoginForm.validationRules.password,
+							}}
+						>
+							{(passwordField) => (
+								<loginForm.Field name="showPassword">
+									{(showPasswordField) => (
+										<Input
+											name="password"
+											type={showPasswordField.state.value ? 'text' : 'password'}
+											label="Password"
+											placeholder="Your password"
+											value={passwordField.state.value}
+											onValueChange={passwordField.handleChange}
+											onBlur={passwordField.handleBlur}
+											isRequired
+											isInvalid={!passwordField.state.meta.isValid}
+											errorMessage={String(passwordField.state.meta.errors)}
+											variant="bordered"
+											color={
+												!passwordField.state.meta.isValid ? 'danger' : 'primary'
+											}
+											startContent={
+												<LockIcon
+													size={18}
+													className={cn('text-foreground-500')}
+												/>
+											}
+											endContent={
+												<Button
+													isIconOnly
+													size="sm"
+													variant="light"
+													radius="full"
+													aria-label={
+														showPasswordField.state.value
+															? 'Hide password'
+															: 'Show password'
+													}
+													onPress={toggleShowPassword}
+													className={cn('text-foreground-500')}
+												>
+													{showPasswordField.state.value ? (
+														<EyeSlashIcon size={18} />
+													) : (
+														<EyeIcon size={18} />
+													)}
+												</Button>
+											}
+										/>
 									)}
-								</Button>
-							}
-						/>
+								</loginForm.Field>
+							)}
+						</loginForm.Field>
 
 						<div className={cn('flex items-center gap-1')}>
-							<Checkbox
-								size="sm"
-								isSelected={remember}
-								onValueChange={onRememberChange}
-								classNames={{ label: 'text-foreground-600' }}
-							>
-								Remember me
-							</Checkbox>
+							<loginForm.Field name="rememberMe">
+								{(field) => (
+									<Checkbox
+										size="sm"
+										isSelected={field.state.value}
+										onValueChange={field.handleChange}
+										classNames={{ label: 'text-foreground-600' }}
+									>
+										Remember me
+									</Checkbox>
+								)}
+							</loginForm.Field>
 
 							<Link
 								color="primary"
@@ -203,19 +200,23 @@ const LoginPage = memo(() => {
 							</Link>
 						</div>
 
-						<Button
-							type="submit"
-							color="primary"
-							variant="solid"
-							fullWidth
-							radius="md"
-							isDisabled={!isFormValid || isLoading}
-							isLoading={isLoading}
-							endContent={<ArrowRightIcon size={18} />}
-							className={cn('mt-2')}
-						>
-							Sign in
-						</Button>
+						<loginForm.Subscribe selector={(state) => state.isValid}>
+							{(isFormValid) => (
+								<Button
+									type="submit"
+									color="primary"
+									variant="solid"
+									fullWidth
+									radius="md"
+									isDisabled={!isFormValid || loginMutation.isPending}
+									isLoading={loginMutation.isPending}
+									endContent={<ArrowRightIcon size={18} />}
+									className={cn('mt-2')}
+								>
+									Sign in
+								</Button>
+							)}
+						</loginForm.Subscribe>
 					</Form>
 
 					<p className={cn('text-foreground-500 text-small')}>
