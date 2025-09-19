@@ -12,22 +12,26 @@ const stateSchema = z.object({
 const validationRules = {
 	email: z.pipe(
 		z.string().min(1, {
-			error: 'login.emailRequired',
+			error: 'Email is required',
 		}),
-		z.email({ error: 'login.emailInvalid' }),
+		z.email({ error: 'Invalid email address' }),
 	),
-	password: z.string().nonempty('login.passwordRequired').min(8, {
-		error: 'login.passwordMinLength',
+	password: z.string().nonempty('Password is required').min(8, {
+		error: 'Password must be at least 8 characters long',
 	}),
+	showPassword: z.boolean(),
+	rememberMe: z.boolean(),
 };
 
 const validationSchema = z
 	.object({
 		email: validationRules.email,
 		password: validationRules.password,
+		showPassword: validationRules.showPassword,
+		rememberMe: validationRules.rememberMe,
 	})
 	.transform((data) => {
-		return { ...data };
+		return { email: data.email, password: data.password };
 	});
 
 export const LoginForm = {

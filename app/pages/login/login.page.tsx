@@ -15,6 +15,9 @@ import {
 	EyeSlashIcon,
 	LockIcon,
 } from '@phosphor-icons/react';
+import { FieldError } from '@shared/components/field-error/field-error.component';
+import { FieldIcon } from '@shared/components/field-icon/field-icon.component';
+import { useErrorParser } from '@shared/utility/errors';
 import { dataAttr } from '@shared/utility/props';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
@@ -22,6 +25,7 @@ import { type FormEvent, memo, useCallback } from 'react';
 import { LoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
+	const { parseFieldErrors } = useErrorParser();
 	const loginMutation = useMutation({
 		mutationKey: ['login'],
 		mutationFn: async () => {
@@ -31,12 +35,17 @@ const LoginPage = memo(() => {
 	});
 
 	const loginForm = useForm({
+		validators: {
+			onSubmit: LoginForm.validationSchema,
+		},
+
 		defaultValues: {
 			email: '',
 			password: '',
 			rememberMe: false,
 			showPassword: false,
 		} as LoginFormState,
+
 		onSubmit: async (values) => {
 			try {
 				await loginMutation.mutateAsync();
@@ -107,14 +116,20 @@ const LoginPage = memo(() => {
 									onValueChange={field.handleChange}
 									onBlur={field.handleBlur}
 									isInvalid={!field.state.meta.isValid}
-									errorMessage={String(field.state.meta.errors)}
+									errorMessage={
+										<FieldError
+											errors={parseFieldErrors(field.state.meta.errors)}
+											maxDisplayLength={60}
+											color="danger"
+											size="sm"
+										/>
+									}
 									color={!field.state.meta.isValid ? 'danger' : 'primary'}
 									isRequired
 									startContent={
-										<EnvelopeSimpleIcon
-											size={18}
-											className={cn('text-foreground-500')}
-										/>
+										<FieldIcon>
+											<EnvelopeSimpleIcon size={18} />
+										</FieldIcon>
 									}
 								/>
 							)}
@@ -139,16 +154,24 @@ const LoginPage = memo(() => {
 											onBlur={passwordField.handleBlur}
 											isRequired
 											isInvalid={!passwordField.state.meta.isValid}
-											errorMessage={String(passwordField.state.meta.errors)}
+											errorMessage={
+												<FieldError
+													errors={parseFieldErrors(
+														passwordField.state.meta.errors,
+													)}
+													maxDisplayLength={60}
+													color="danger"
+													size="sm"
+												/>
+											}
 											variant="bordered"
 											color={
 												!passwordField.state.meta.isValid ? 'danger' : 'primary'
 											}
 											startContent={
-												<LockIcon
-													size={18}
-													className={cn('text-foreground-500')}
-												/>
+												<FieldIcon>
+													<LockIcon size={18} />
+												</FieldIcon>
 											}
 											endContent={
 												<Button
