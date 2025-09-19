@@ -13,6 +13,7 @@ import {
 	EnvelopeSimpleIcon,
 	EyeIcon,
 	EyeSlashIcon,
+	GoogleLogoIcon,
 	LockIcon,
 } from '@phosphor-icons/react';
 import { FieldError } from '@shared/components/field-error/field-error.component';
@@ -35,10 +36,6 @@ const LoginPage = memo(() => {
 	});
 
 	const loginForm = useForm({
-		validators: {
-			onSubmit: LoginForm.validationSchema,
-		},
-
 		defaultValues: {
 			email: '',
 			password: '',
@@ -46,11 +43,11 @@ const LoginPage = memo(() => {
 			showPassword: false,
 		} as LoginFormState,
 
-		onSubmit: async (values) => {
+		onSubmit: async ({ value }) => {
 			try {
 				await loginMutation.mutateAsync();
 				// Handle successful login (e.g., redirect to dashboard)
-				console.log('Login successful', values);
+				console.log('Login successful with values', value);
 			} catch (error) {
 				// Handle login error (e.g., show error message)
 				console.error('Login failed', error);
@@ -62,10 +59,14 @@ const LoginPage = memo(() => {
 		(event: FormEvent) => {
 			event.preventDefault();
 			event.stopPropagation();
-			loginForm.handleSubmit();
+			loginForm.handleSubmit({ loginMethod: 'email' });
 		},
 		[loginForm],
 	);
+
+	const handleGoogleSubmit = useCallback(() => {
+		console.log('Google login clicked');
+	}, []);
 
 	const toggleShowPassword = useCallback(() => {
 		loginForm.setFieldValue('showPassword', (current) => !current);
@@ -223,23 +224,50 @@ const LoginPage = memo(() => {
 							</Link>
 						</div>
 
-						<loginForm.Subscribe selector={(state) => state.isValid}>
-							{(isFormValid) => (
-								<Button
-									type="submit"
-									color="primary"
-									variant="solid"
-									fullWidth
-									radius="md"
-									isDisabled={!isFormValid || loginMutation.isPending}
-									isLoading={loginMutation.isPending}
-									endContent={<ArrowRightIcon size={18} />}
-									className={cn('mt-2')}
-								>
-									Sign in
-								</Button>
-							)}
-						</loginForm.Subscribe>
+						<div className={cn('flex w-full flex-col gap-2')}>
+							<loginForm.Subscribe selector={(state) => state.isValid}>
+								{(isFormValid) => (
+									<Button
+										type="submit"
+										color="primary"
+										variant="solid"
+										fullWidth
+										radius="md"
+										isDisabled={!isFormValid || loginMutation.isPending}
+										isLoading={loginMutation.isPending}
+										endContent={<ArrowRightIcon size={18} />}
+										className={cn('mt-1')}
+									>
+										Sign in
+									</Button>
+								)}
+							</loginForm.Subscribe>
+
+							<div className={cn('relative my-2')}>
+								<div className={cn('absolute inset-0 flex items-center')}>
+									<div className={cn('w-full border-divider border-t')} />
+								</div>
+								<div className={cn('relative flex justify-center text-small')}>
+									<span className={cn('bg-content1 px-2 text-foreground-500')}>
+										Or continue with other methods
+									</span>
+								</div>
+							</div>
+
+							<Button
+								type="button"
+								color="default"
+								variant="bordered"
+								fullWidth
+								radius="md"
+								isDisabled={loginMutation.isPending}
+								startContent={<GoogleLogoIcon size={18} />}
+								onPress={handleGoogleSubmit}
+								className={cn('mt-1')}
+							>
+								Continue with Google
+							</Button>
+						</div>
 					</Form>
 
 					<p className={cn('text-foreground-500 text-small')}>
