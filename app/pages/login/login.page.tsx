@@ -1,4 +1,5 @@
 import {
+	Alert,
 	Button,
 	Card,
 	CardBody,
@@ -27,6 +28,7 @@ import { LoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
 	const { parseFieldErrors } = useErrorParser();
+
 	const loginMutation = useMutation({
 		mutationKey: ['login'],
 		mutationFn: async () => {
@@ -65,7 +67,7 @@ const LoginPage = memo(() => {
 	);
 
 	const handleGoogleSubmit = useCallback(() => {
-		console.log('Google login clicked');
+		window.location.replace('/api/auth/google/login');
 	}, []);
 
 	const toggleShowPassword = useCallback(() => {
@@ -200,6 +202,22 @@ const LoginPage = memo(() => {
 								</loginForm.Field>
 							)}
 						</loginForm.Field>
+
+						<loginForm.Subscribe
+							selector={(state) => state.values.email.endsWith('@gmail.com')}
+						>
+							{(showGoogleBanner) =>
+								showGoogleBanner && (
+									<Alert
+										color="primary"
+										variant="faded"
+										className={cn('mb-2 text-small')}
+									>
+										Why not try Google sign-in? It's easier!
+									</Alert>
+								)
+							}
+						</loginForm.Subscribe>
 
 						<div className={cn('flex items-center gap-1')}>
 							<loginForm.Field name="rememberMe">

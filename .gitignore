@@ -16,3 +16,7 @@ dist/
 
 # pnpm workspace file
 pnpm-workspace.yaml
+
+# Local environment variables
+.env
+.env.local
