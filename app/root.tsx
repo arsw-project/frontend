@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Meta />
 				<Links />
 			</head>
-			<body className="dark bg-background">
+			<body className="dark h-dvh w-dvw overflow-x-hidden bg-background text-foreground antialiased">
 				{children}
 				<ScrollRestoration />
 				<Scripts />
