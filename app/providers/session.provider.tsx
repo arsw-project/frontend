@@ -28,8 +28,6 @@ type Session = {
 
 type SessionContextType = {
 	session: QueryResult<Session>;
-	login: ReturnType<typeof useLoginMutation>;
-	logout: ReturnType<typeof useLogoutMutation>;
 };
 
 const loginMutationFn = async (form: LoginFormState, axios: AxiosInstance) => {
@@ -129,9 +127,6 @@ const useSessionHooks = (): SessionContextType => {
 		retry: false,
 	});
 
-	const login = useLoginMutation();
-	const logout = useLogoutMutation();
-
 	const session = {
 		data: sessionQuery.data,
 		isLoading: sessionQuery.isLoading,
@@ -142,8 +137,6 @@ const useSessionHooks = (): SessionContextType => {
 
 	return {
 		session,
-		login,
-		logout,
 	};
 };
 

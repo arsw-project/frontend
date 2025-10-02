@@ -1,5 +1,5 @@
 import { Button } from '@heroui/react';
-import { useSession } from '@providers/session.provider';
+import { useLogoutMutation, useSession } from '@providers/session.provider';
 import { memo, useCallback } from 'react';
 
 export function meta() {
@@ -10,15 +10,18 @@ export function meta() {
 }
 
 const HomePage = memo(() => {
-	const { session, logout } = useSession();
+	const { session } = useSession();
+	const logoutMutation = useLogoutMutation();
 
 	const handleLogout = useCallback(() => {
-		logout.execute();
-	}, [logout]);
+		logoutMutation.execute();
+	}, [logoutMutation]);
 
 	return (
 		<div className="flex flex-col gap-4 rounded-large bg-content1 p-4 text-content1-foreground shadow-small">
-			<h1 className="font-bold text-4xl">ARSW Project - Frontend</h1>
+			<h1 className="text-center font-bold text-large">
+				ARSW Project - Frontend
+			</h1>
 			<pre>{JSON.stringify(session.data, null, 2)}</pre>
 			<Button onPress={handleLogout}>Logout</Button>
 		</div>

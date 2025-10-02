@@ -17,23 +17,23 @@ import {
 	GoogleLogoIcon,
 	LockIcon,
 } from '@phosphor-icons/react';
+import { useLoginMutation } from '@providers/session.provider';
 import { FieldError } from '@shared/components/field-error/field-error.component';
 import { FieldIcon } from '@shared/components/field-icon/field-icon.component';
 import { useErrorParser } from '@shared/utility/errors';
 import { dataAttr } from '@shared/utility/props';
 import { useForm } from '@tanstack/react-form';
-import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, memo, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { LoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
 	const { parseFieldErrors } = useErrorParser();
 
-	const loginMutation = useMutation({
-		mutationKey: ['login'],
-		mutationFn: async () => {
-			// Simulate a login API call
-			return new Promise((resolve) => setTimeout(resolve, 2000));
+	const navigate = useNavigate();
+	const loginMutation = useLoginMutation({
+		onSuccess: () => {
+			navigate('/', { replace: true });
 		},
 	});
 
@@ -47,11 +47,9 @@ const LoginPage = memo(() => {
 
 		onSubmit: async ({ value }) => {
 			try {
-				await loginMutation.mutateAsync();
-				// Handle successful login (e.g., redirect to dashboard)
-				console.log('Login successful with values', value);
+				await loginMutation.execute(value);
 			} catch (error) {
-				// Handle login error (e.g., show error message)
+				alert('Login failed. Please check your credentials and try again.'); // TODO: Replace with better UX
 				console.error('Login failed', error);
 			}
 		},
@@ -103,7 +101,7 @@ const LoginPage = memo(() => {
 						validationBehavior="aria"
 						onSubmit={handleSubmit}
 						className={cn('space-y-5')}
-						data-loading={dataAttr(loginMutation.isPending)}
+						data-loading={dataAttr(loginMutation.isLoading)}
 					>
 						<loginForm.Field
 							name="email"
@@ -251,8 +249,8 @@ const LoginPage = memo(() => {
 										variant="solid"
 										fullWidth
 										radius="md"
-										isDisabled={!isFormValid || loginMutation.isPending}
-										isLoading={loginMutation.isPending}
+										isDisabled={!isFormValid || loginMutation.isLoading}
+										isLoading={loginMutation.isLoading}
 										endContent={<ArrowRightIcon size={18} />}
 										className={cn('mt-1')}
 									>
@@ -278,7 +276,7 @@ const LoginPage = memo(() => {
 								variant="bordered"
 								fullWidth
 								radius="md"
-								isDisabled={loginMutation.isPending}
+								isDisabled={loginMutation.isLoading}
 								startContent={<GoogleLogoIcon size={18} />}
 								onPress={handleGoogleSubmit}
 								className={cn('mt-1')}

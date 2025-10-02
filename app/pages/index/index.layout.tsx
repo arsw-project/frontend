@@ -1,12 +1,13 @@
 import { useSession } from '@providers/session.provider';
 import { memo } from 'react';
 import { Navigate, Outlet } from 'react-router';
+import { AppLoading } from './components/app-loading/app-loading.component';
 
 const IndexLayout = memo(() => {
 	const { session } = useSession();
 
 	if (session.isLoading) {
-		return <div>Loading...</div>;
+		return <AppLoading />;
 	}
 
 	if (session.isError) {
