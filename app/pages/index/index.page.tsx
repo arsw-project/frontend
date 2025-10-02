@@ -1,4 +1,6 @@
-import { memo } from 'react';
+import { Button } from '@heroui/react';
+import { useSession } from '@providers/session.provider';
+import { memo, useCallback } from 'react';
 
 export function meta() {
 	return [
@@ -8,10 +10,18 @@ export function meta() {
 }
 
 const HomePage = memo(() => {
+	const { session, logout } = useSession();
+
+	const handleLogout = useCallback(() => {
+		logout.execute();
+	}, [logout]);
+
 	return (
-		<main className="grid h-dvh w-dvw place-items-center">
+		<div className="flex flex-col gap-4 rounded-large bg-content1 p-4 text-content1-foreground shadow-small">
 			<h1 className="font-bold text-4xl">ARSW Project - Frontend</h1>
-		</main>
+			<pre>{JSON.stringify(session.data, null, 2)}</pre>
+			<Button onPress={handleLogout}>Logout</Button>
+		</div>
 	);
 });
 
