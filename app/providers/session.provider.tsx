@@ -1,14 +1,16 @@
-import type { LoginFormState } from '@pages/login/login.validators';
+import { LoginForm, type LoginFormState } from '@pages/login/login.validators';
 import { useAxios } from '@shared/hooks/axios.hook';
+import { isApiError } from '@shared/utility/errors';
 import {
 	MUTATION_KEYS,
 	type MutationHookArgs,
 } from '@shared/utility/mutations';
 import { QUERY_KEYS, type QueryResult } from '@shared/utility/queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AxiosInstance } from 'axios';
+import { type AxiosInstance, isAxiosError } from 'axios';
 import { createContext, memo, type ReactNode, use } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 
 type LoginResponse = Awaited<ReturnType<typeof loginMutationFn>>;
 
@@ -30,7 +32,15 @@ type SessionContextType = {
 	session: QueryResult<Session>;
 };
 
-const loginMutationFn = async (form: LoginFormState, axios: AxiosInstance) => {
+type LoginCredentials = {
+	email: string;
+	password: string;
+};
+
+const loginMutationFn = async (
+	form: LoginCredentials,
+	axios: AxiosInstance,
+) => {
 	const { email, password } = form;
 
 	const response = await axios.post('/auth/login', { email, password });
@@ -46,13 +56,36 @@ export const useLoginMutation = (
 
 	const loginMutation = useMutation({
 		mutationKey: [MUTATION_KEYS.LOGIN],
-		mutationFn: (form: LoginFormState) => loginMutationFn(form, axios),
+		mutationFn: (form: LoginFormState) => {
+			const parsedForm = LoginForm.validationSchema.parse(form);
+			return loginMutationFn(parsedForm, axios);
+		},
 		onSuccess: (data) => {
 			queryClient.setQueryData([QUERY_KEYS.SESSION], data);
 			args.onSuccess?.(data);
 		},
-		onError: (error) => {
-			args.onUnknownError?.(error);
+		onError: (rawError) => {
+			if (isAxiosError(rawError)) {
+				const apiError = rawError.response?.data;
+
+				if (!apiError) {
+					args.onUnknownError?.(rawError);
+					return;
+				}
+
+				if (!isApiError(apiError)) {
+					args.onUnknownError?.(rawError);
+					return;
+				}
+
+				return args.onApiError?.(apiError);
+			}
+
+			if (rawError instanceof z.ZodError) {
+				return args.onValidationError?.(rawError);
+			}
+
+			args.onUnknownError?.(rawError);
 		},
 		retry: false,
 	});

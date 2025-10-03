@@ -20,7 +20,7 @@ import {
 import { useLoginMutation } from '@providers/session.provider';
 import { FieldError } from '@shared/components/field-error/field-error.component';
 import { FieldIcon } from '@shared/components/field-icon/field-icon.component';
-import { useErrorParser } from '@shared/utility/errors';
+import { useErrorParser, zodErrorToErrorMap } from '@shared/utility/errors';
 import { dataAttr } from '@shared/utility/props';
 import { useForm } from '@tanstack/react-form';
 import { type FormEvent, memo, useCallback } from 'react';
@@ -35,6 +35,12 @@ const LoginPage = memo(() => {
 		onSuccess: () => {
 			navigate('/', { replace: true });
 		},
+		onApiError: (error) => {
+			loginForm.setErrorMap(zodErrorToErrorMap(error));
+		},
+		onValidationError: (error) => {
+			loginForm.setErrorMap(zodErrorToErrorMap(error));
+		},
 	});
 
 	const loginForm = useForm({
@@ -48,9 +54,8 @@ const LoginPage = memo(() => {
 		onSubmit: async ({ value }) => {
 			try {
 				await loginMutation.execute(value);
-			} catch (error) {
-				alert('Login failed. Please check your credentials and try again.'); // TODO: Replace with better UX
-				console.error('Login failed', error);
+			} catch {
+				console.log('Login failed');
 			}
 		},
 	});
