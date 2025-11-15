@@ -27,7 +27,7 @@ import { useForm } from '@tanstack/react-form';
 import { type FormEvent, memo, useCallback } from 'react';
 import { useIntlayer } from 'react-intlayer';
 import { useNavigate } from 'react-router';
-import { LoginForm, type LoginFormState } from './login.validators';
+import { createLoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
 	const { parseFieldErrors } = useErrorParser();
@@ -48,7 +48,16 @@ const LoginPage = memo(() => {
 		tryGoogle,
 		showPassword,
 		hidePassword,
+		emailRequired,
+		invalidEmail,
+		passwordRequired,
 	} = useIntlayer('login');
+
+	const LoginForm = createLoginForm({
+		emailRequired: emailRequired.value,
+		invalidEmail: invalidEmail.value,
+		passwordRequired: passwordRequired.value,
+	});
 
 	const navigate = useNavigate();
 	const loginMutation = useLoginMutation({

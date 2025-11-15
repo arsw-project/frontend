@@ -7,6 +7,7 @@ import {
 	type ReactNode,
 	useMemo,
 } from 'react';
+import { useIntlayer } from 'react-intlayer';
 import { tv, type VariantProps } from 'tailwind-variants';
 
 const fieldErrorVariants = tv({
@@ -178,6 +179,9 @@ const FieldError = memo(
 				return errors.filter((error) => error?.trim());
 			}, [errors]);
 
+			const { validationError, validationErrors, and, more } =
+				useIntlayer('field-error');
+
 			// Memoize slot calculations for performance
 			const slots = useMemo(
 				() =>
@@ -206,8 +210,8 @@ const FieldError = memo(
 						? `${firstError.substring(0, maxDisplayLength - 15)}...`
 						: firstError;
 
-				return `${baseText} and ${additionalCount} more`;
-			}, [errorArray, maxDisplayLength]);
+				return `${baseText} ${and.value} ${additionalCount} ${more.value}`;
+			}, [errorArray, maxDisplayLength, and, more]);
 
 			// Format tooltip content
 			const tooltipContent = useMemo(() => {
@@ -232,9 +236,7 @@ const FieldError = memo(
 							])}
 						>
 							{errorArray.length}{' '}
-							{errorArray.length === 1
-								? 'validation error'
-								: 'validation errors'}
+							{errorArray.length === 1 ? validationError : validationErrors}
 						</div>
 						<div className={cn([slots.errorList(), classNames.errorList])}>
 							{errorArray.map((error, index) => (
@@ -248,7 +250,15 @@ const FieldError = memo(
 						</div>
 					</div>
 				);
-			}, [errorArray, errorFormatter, slots, classNames, color]);
+			}, [
+				errorArray,
+				errorFormatter,
+				slots,
+				classNames,
+				color,
+				validationError,
+				validationErrors,
+			]);
 
 			// Memoize tooltip show logic
 			const shouldShowTooltip = useMemo(() => {

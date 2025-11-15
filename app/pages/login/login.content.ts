@@ -67,6 +67,18 @@ const loginContent = {
 			en: 'Hide password',
 			es: 'Ocultar contraseña',
 		}),
+		emailRequired: t({
+			en: 'Email is required',
+			es: 'El correo electrónico es obligatorio',
+		}),
+		invalidEmail: t({
+			en: 'Invalid email address',
+			es: 'Dirección de correo electrónico inválida',
+		}),
+		passwordRequired: t({
+			en: 'Password is required',
+			es: 'La contraseña es obligatoria',
+		}),
 	},
 } satisfies Dictionary;
 

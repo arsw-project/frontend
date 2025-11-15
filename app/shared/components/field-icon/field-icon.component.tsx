@@ -8,9 +8,7 @@ interface FieldIconProps {
 export const FieldIcon = memo(({ children }: FieldIconProps) => {
 	return (
 		<span
-			className={cn(
-				"text-default-400 group-[[data-invalid='true']]:text-danger",
-			)}
+			className={cn("text-default-400 group-data-[invalid='true']:text-danger")}
 		>
 			{children}
 		</span>

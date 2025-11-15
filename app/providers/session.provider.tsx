@@ -1,4 +1,7 @@
-import { LoginForm, type LoginFormState } from '@pages/login/login.validators';
+import {
+	apiValidationSchema,
+	type LoginFormState,
+} from '@pages/login/login.validators';
 import { useAxios } from '@shared/hooks/axios.hook';
 import { isApiError } from '@shared/utility/errors';
 import {
@@ -57,7 +60,7 @@ export const useLoginMutation = (
 	const loginMutation = useMutation({
 		mutationKey: [MUTATION_KEYS.LOGIN],
 		mutationFn: (form: LoginFormState) => {
-			const parsedForm = LoginForm.validationSchema.parse(form);
+			const parsedForm = apiValidationSchema.parse(form);
 			return loginMutationFn(parsedForm, axios);
 		},
 		onSuccess: (data) => {

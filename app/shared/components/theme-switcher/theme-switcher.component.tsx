@@ -1,12 +1,16 @@
 import { Card, CardBody, cn, Switch } from '@heroui/react';
-import { Moon, Sun } from '@phosphor-icons/react';
+import { MoonIcon, SunIcon } from '@phosphor-icons/react';
 import { useTheme } from '@providers/theme.provider';
 import { memo, useCallback } from 'react';
+import { useIntlayer } from 'react-intlayer';
 
 export const ThemeSwitcher = memo(function ThemeSwitcher() {
 	const { theme, setTheme } = useTheme();
 
 	const isDark = theme === 'dark';
+
+	const { themeLabel, darkMode, lightMode, toggleThemeAriaLabel } =
+		useIntlayer('theme-switcher');
 
 	const handleThemeChange = useCallback(
 		(isSelected: boolean) => {
@@ -24,7 +28,7 @@ export const ThemeSwitcher = memo(function ThemeSwitcher() {
 			>
 				<div className={cn(['flex flex-col gap-1'])}>
 					<p className={cn(['font-semibold text-foreground text-small'])}>
-						Theme
+						{themeLabel}
 					</p>
 					<p
 						className={cn([
@@ -32,7 +36,7 @@ export const ThemeSwitcher = memo(function ThemeSwitcher() {
 							isDark ? 'text-blue-400' : 'text-orange-400',
 						])}
 					>
-						{isDark ? 'Dark mode' : 'Light mode'}
+						{isDark ? darkMode : lightMode}
 					</p>
 				</div>
 
@@ -42,16 +46,24 @@ export const ThemeSwitcher = memo(function ThemeSwitcher() {
 					size="lg"
 					onValueChange={handleThemeChange}
 					startContent={
-						<Sun size={16} weight="fill" className={cn(['text-orange-400'])} />
+						<SunIcon
+							size={16}
+							weight="fill"
+							className={cn(['text-orange-400'])}
+						/>
 					}
 					endContent={
-						<Moon size={16} weight="fill" className={cn(['text-blue-400'])} />
+						<MoonIcon
+							size={16}
+							weight="fill"
+							className={cn(['text-blue-400'])}
+						/>
 					}
 					classNames={{
 						base: 'flex-row-reverse',
 						wrapper: 'group-data-hover:bg-content2',
 					}}
-					aria-label="Toggle theme"
+					aria-label={toggleThemeAriaLabel.value}
 				/>
 			</CardBody>
 		</Card>

@@ -1,8 +1,11 @@
 import { Card, CardBody, cn, Spinner } from '@heroui/react';
 import { motion } from 'framer-motion';
 import { memo } from 'react';
+import { useIntlayer } from 'react-intlayer';
 
 const AppLoading = memo(() => {
+	const { loadingText } = useIntlayer('app-loading');
+
 	return (
 		<motion.div
 			initial={{ opacity: 0 }}
@@ -15,7 +18,7 @@ const AppLoading = memo(() => {
 				<CardBody className={cn(['flex flex-col items-center gap-4 p-8'])}>
 					<Spinner size="lg" color="primary" />
 					<p className={cn(['text-center text-foreground text-medium'])}>
-						Loading application...
+						{loadingText}
 					</p>
 				</CardBody>
 			</Card>

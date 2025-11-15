@@ -1,6 +1,6 @@
 import z from 'zod';
 
-export type LoginFormState = z.infer<typeof LoginForm.stateSchema>;
+export type LoginFormState = z.infer<typeof stateSchema>;
 
 const stateSchema = z.object({
 	email: z.string(),
@@ -9,31 +9,48 @@ const stateSchema = z.object({
 	rememberMe: z.boolean(),
 });
 
-const validationRules = {
-	email: z.pipe(
-		z.string().min(1, {
-			error: 'Email is required',
-		}),
-		z.email({ error: 'Invalid email address' }),
-	),
-	password: z.string().nonempty('Password is required'),
-	showPassword: z.boolean(),
-	rememberMe: z.boolean(),
+export const createLoginForm = (messages: {
+	emailRequired: string;
+	invalidEmail: string;
+	passwordRequired: string;
+}) => {
+	const validationRules = {
+		email: z
+			.string()
+			.min(1, messages.emailRequired)
+			.email(messages.invalidEmail),
+		password: z.string().nonempty(messages.passwordRequired),
+		showPassword: z.boolean(),
+		rememberMe: z.boolean(),
+	};
+
+	const validationSchema = z
+		.object({
+			email: validationRules.email,
+			password: validationRules.password,
+			showPassword: validationRules.showPassword,
+			rememberMe: validationRules.rememberMe,
+		})
+		.transform((data) => {
+			return { email: data.email, password: data.password };
+		});
+
+	return {
+		stateSchema,
+		validationRules,
+		validationSchema,
+	};
 };
 
-const validationSchema = z
+const apiValidationSchema = z
 	.object({
-		email: validationRules.email,
-		password: validationRules.password,
-		showPassword: validationRules.showPassword,
-		rememberMe: validationRules.rememberMe,
+		email: z.string().email(),
+		password: z.string().min(1),
+		showPassword: z.boolean(),
+		rememberMe: z.boolean(),
 	})
 	.transform((data) => {
 		return { email: data.email, password: data.password };
 	});
 
-export const LoginForm = {
-	stateSchema,
-	validationRules,
-	validationSchema,
-};
+export { apiValidationSchema };
