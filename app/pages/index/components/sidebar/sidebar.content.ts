@@ -3,13 +3,17 @@ import { type Dictionary, t } from 'intlayer';
 const sidebarContent = {
 	key: 'sidebar',
 	content: {
-		home: t({
-			en: 'Home',
-			es: 'Inicio',
+		dashboard: t({
+			en: 'Dashboard',
+			es: 'Panel de Control',
 		}),
-		notifications: t({
-			en: 'Notifications',
-			es: 'Notificaciones',
+		members: t({
+			en: 'Members',
+			es: 'Miembros',
+		}),
+		board: t({
+			en: 'Board',
+			es: 'Tablero',
 		}),
 		settings: t({
 			en: 'Settings',

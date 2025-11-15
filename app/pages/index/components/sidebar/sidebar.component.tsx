@@ -8,23 +8,16 @@ import {
 	Link,
 } from '@heroui/react';
 import {
-	BellIcon,
 	GearIcon,
 	HouseIcon,
+	KanbanIcon,
 	PowerIcon,
+	UsersIcon,
 } from '@phosphor-icons/react';
 import { ThemeSwitcher } from '@shared/components/theme-switcher/theme-switcher.component';
 import { dataAttr } from '@shared/utility/props';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useIntlayer } from 'react-intlayer';
-
-interface SidebarItem {
-	id: string;
-	label: string;
-	labelKey: string;
-	icon: React.ReactNode;
-	href: string;
-}
 
 interface SidebarProps {
 	userName: string;
@@ -33,29 +26,36 @@ interface SidebarProps {
 	onLogout: () => void;
 }
 
-const sidebarItems: SidebarItem[] = [
-	{
-		id: 'home',
-		label: 'Home',
-		labelKey: 'home',
-		icon: <HouseIcon size={20} weight="fill" />,
-		href: '/',
-	},
-	{
-		id: 'notifications',
-		label: 'Notifications',
-		labelKey: 'notifications',
-		icon: <BellIcon size={20} weight="fill" />,
-		href: '/notifications',
-	},
-	{
-		id: 'settings',
-		label: 'Settings',
-		labelKey: 'settings',
-		icon: <GearIcon size={20} weight="fill" />,
-		href: '/settings',
-	},
-];
+const SidebarNavItem = ({
+	id,
+	href,
+	icon,
+	label,
+	isActive,
+	onClick,
+}: {
+	id: string;
+	href: string;
+	icon: React.ReactNode;
+	label: React.ReactNode;
+	isActive: boolean;
+	onClick: (id: string) => void;
+}) => (
+	<Link
+		data-active={dataAttr(isActive)}
+		href={href}
+		className={cn([
+			'flex items-center gap-3 rounded-medium px-4 py-2',
+			'text-foreground no-underline transition-all duration-200',
+			'hover:bg-default-100 data-active:bg-primary data-active:text-primary-foreground',
+			'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+		])}
+		onPress={() => onClick(id)}
+	>
+		<span className={cn(['shrink-0 text-lg'])}>{icon}</span>
+		<span className={cn(['font-medium text-small'])}>{label}</span>
+	</Link>
+);
 
 export const Sidebar = memo(function Sidebar({
 	userName,
@@ -63,8 +63,9 @@ export const Sidebar = memo(function Sidebar({
 	userAvatar,
 	onLogout,
 }: SidebarProps) {
-	const [activeItem, setActiveItem] = useState<string>('home');
-	const { home, notifications, settings, signOut } = useIntlayer('sidebar');
+	const [activeItem, setActiveItem] = useState<string>('dashboard');
+	const { dashboard, members, board, settings, signOut } =
+		useIntlayer('sidebar');
 
 	const handleItemClick = useCallback((itemId: string) => {
 		setActiveItem(itemId);
@@ -121,34 +122,46 @@ export const Sidebar = memo(function Sidebar({
 			<Divider className={cn(['my-1'])} />
 
 			<nav className={cn(['flex flex-1 flex-col gap-2'])}>
-				{sidebarItems.map((item) => {
-					const isActive = activeItem === item.id;
-					const labelContent =
-						item.labelKey === 'home'
-							? home
-							: item.labelKey === 'notifications'
-								? notifications
-								: settings;
+				{(() => {
+					const labelMap = { dashboard, members, board, settings };
 					return (
-						<Link
-							key={item.id}
-							data-active={dataAttr(isActive)}
-							href={item.href}
-							className={cn([
-								'flex items-center gap-3 rounded-medium px-4 py-2',
-								'text-foreground no-underline transition-all duration-200',
-								'hover:bg-default-100 data-active:bg-primary data-active:text-primary-foreground',
-								'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-							])}
-							onPress={() => handleItemClick(item.id)}
-						>
-							<span className={cn(['shrink-0 text-lg'])}>{item.icon}</span>
-							<span className={cn(['font-medium text-small'])}>
-								{labelContent}
-							</span>
-						</Link>
+						<>
+							<SidebarNavItem
+								id="dashboard"
+								href="/"
+								icon={<HouseIcon size={20} weight="fill" />}
+								label={labelMap.dashboard}
+								isActive={activeItem === 'dashboard'}
+								onClick={handleItemClick}
+							/>
+							<SidebarNavItem
+								id="members"
+								href="/members"
+								icon={<UsersIcon size={20} weight="fill" />}
+								label={labelMap.members}
+								isActive={activeItem === 'members'}
+								onClick={handleItemClick}
+							/>
+							<SidebarNavItem
+								id="board"
+								href="/board"
+								icon={<KanbanIcon size={20} weight="fill" />}
+								label={labelMap.board}
+								isActive={activeItem === 'board'}
+								onClick={handleItemClick}
+							/>
+							<Divider />
+							<SidebarNavItem
+								id="settings"
+								href="/settings"
+								icon={<GearIcon size={20} weight="fill" />}
+								label={labelMap.settings}
+								isActive={activeItem === 'settings'}
+								onClick={handleItemClick}
+							/>
+						</>
 					);
-				})}
+				})()}
 			</nav>
 
 			<Divider className={cn(['my-1'])} />
