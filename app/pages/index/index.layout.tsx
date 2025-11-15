@@ -25,7 +25,7 @@ const IndexLayout = memo(() => {
 	const userName = session.data.user.name;
 
 	return (
-		<main className="flex h-dvh w-dvw bg-background">
+		<main className="flex h-dvh w-dvw flex-col bg-background md:flex-row">
 			<AnimatePresence>{session.isLoading && <AppLoading />}</AnimatePresence>
 			{!session.isLoading && (
 				<>
@@ -34,7 +34,7 @@ const IndexLayout = memo(() => {
 						userEmail={userEmail}
 						onLogout={handleLogout}
 					/>
-					<div className="flex-1 overflow-auto">
+					<div className="flex-1 overflow-auto pt-16 md:pt-0">
 						<Outlet />
 					</div>
 				</>

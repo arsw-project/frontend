@@ -23,6 +23,14 @@ const sidebarContent = {
 			en: 'Sign Out',
 			es: 'Cerrar Sesión',
 		}),
+		menu: t({
+			en: 'Menu',
+			es: 'Menú',
+		}),
+		app: t({
+			en: 'App',
+			es: 'Aplicación',
+		}),
 	},
 } satisfies Dictionary;
 
