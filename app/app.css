@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@config '#tailwind.config';
+@config "#tailwind.config";
 
 @theme {
 	--font-sans:
