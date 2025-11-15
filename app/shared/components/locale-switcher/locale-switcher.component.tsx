@@ -8,8 +8,8 @@ import {
 } from '@heroui/react';
 import { getLocalizedUrl, getPathWithoutLocale } from 'intlayer';
 import { memo, useCallback } from 'react';
-import { setLocaleInStorage, useLocale } from 'react-intlayer';
-import { useLocation } from 'react-router';
+import { useLocale } from 'react-intlayer';
+import { useLocation, useNavigate } from 'react-router';
 
 // Mapping of language codes to flag emojis
 const LOCALE_FLAGS: Record<string, string> = {
@@ -28,18 +28,27 @@ const LOCALE_FLAGS: Record<string, string> = {
 };
 
 const LocaleSwitcher = memo(() => {
-	const { locale: currentLocale, availableLocales } = useLocale();
 	const { pathname } = useLocation();
+	const navigate = useNavigate();
 
 	const pathWithoutLocale = getPathWithoutLocale(pathname);
 
+	const {
+		locale: currentLocale,
+		availableLocales,
+		setLocale,
+	} = useLocale({
+		onLocaleChange: (newLocale: string) => {
+			const localizedPath = getLocalizedUrl(pathWithoutLocale, newLocale);
+			navigate(localizedPath);
+		},
+	});
+
 	const handleLocaleChange = useCallback(
 		(newLocale: string) => {
-			setLocaleInStorage(newLocale);
-			const localizedPath = getLocalizedUrl(pathWithoutLocale, newLocale);
-			window.location.href = localizedPath;
+			setLocale(newLocale);
 		},
-		[pathWithoutLocale],
+		[setLocale],
 	);
 
 	const currentFlag =
