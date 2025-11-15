@@ -13,6 +13,7 @@ import {
 	HouseIcon,
 	PowerIcon,
 } from '@phosphor-icons/react';
+import { ThemeSwitcher } from '@shared/components/theme-switcher/theme-switcher.component';
 import { dataAttr } from '@shared/utility/props';
 import { memo, useCallback, useMemo, useState } from 'react';
 
@@ -137,6 +138,10 @@ export const Sidebar = memo(function Sidebar({
 					);
 				})}
 			</nav>
+
+			<Divider className={cn(['my-1'])} />
+
+			<ThemeSwitcher />
 
 			<Divider className={cn(['my-1'])} />
 

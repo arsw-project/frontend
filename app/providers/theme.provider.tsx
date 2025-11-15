@@ -40,7 +40,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
 	}, []);
 
 	useEffect(() => {
-		document.documentElement.classList.toggle('dark', theme === 'dark');
+		document.body.classList.toggle('dark', theme === 'dark');
 		if (typeof window !== 'undefined') {
 			localStorage.setItem('theme', theme);
 		}
