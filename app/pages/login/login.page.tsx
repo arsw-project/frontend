@@ -20,15 +20,35 @@ import {
 import { useLoginMutation } from '@providers/session.provider';
 import { FieldError } from '@shared/components/field-error/field-error.component';
 import { FieldIcon } from '@shared/components/field-icon/field-icon.component';
+import { LocaleSwitcher } from '@shared/components/locale-switcher/locale-switcher.component';
 import { useErrorParser, zodErrorToErrorMap } from '@shared/utility/errors';
 import { dataAttr } from '@shared/utility/props';
 import { useForm } from '@tanstack/react-form';
 import { type FormEvent, memo, useCallback } from 'react';
+import { useIntlayer } from 'react-intlayer';
 import { useNavigate } from 'react-router';
 import { LoginForm, type LoginFormState } from './login.validators';
 
 const LoginPage = memo(() => {
 	const { parseFieldErrors } = useErrorParser();
+	const {
+		title,
+		subtitle,
+		emailLabel,
+		emailPlaceholder,
+		passwordLabel,
+		passwordPlaceholder,
+		rememberMe,
+		forgotPassword,
+		signIn,
+		orContinueWith,
+		continueWithGoogle,
+		noAccount,
+		createAccount,
+		tryGoogle,
+		showPassword,
+		hidePassword,
+	} = useIntlayer('login');
 
 	const navigate = useNavigate();
 	const loginMutation = useLoginMutation({
@@ -80,9 +100,13 @@ const LoginPage = memo(() => {
 	return (
 		<div
 			className={cn(
-				'flex min-h-screen w-full items-center justify-center bg-background p-6',
+				'flex min-h-screen w-full flex-col items-center justify-center bg-background p-6',
 			)}
 		>
+			<div className={cn(['absolute top-6 right-6'])}>
+				<LocaleSwitcher />
+			</div>
+
 			<Card
 				shadow="md"
 				radius="lg"
@@ -95,10 +119,10 @@ const LoginPage = memo(() => {
 								'font-semibold text-foreground text-large leading-large',
 							)}
 						>
-							Sign in
+							{title}
 						</h1>
 						<p className={cn('text-foreground-500 text-small leading-small')}>
-							Welcome back, we're glad to see you.
+							{subtitle}
 						</p>
 					</div>
 
@@ -114,8 +138,8 @@ const LoginPage = memo(() => {
 						>
 							{(field) => (
 								<Input
-									label="Email"
-									placeholder="your@email.com"
+									label={emailLabel}
+									placeholder={emailPlaceholder.value}
 									variant="bordered"
 									name={field.name}
 									value={field.state.value}
@@ -153,8 +177,8 @@ const LoginPage = memo(() => {
 										<Input
 											name="password"
 											type={showPasswordField.state.value ? 'text' : 'password'}
-											label="Password"
-											placeholder="Your password"
+											label={passwordLabel}
+											placeholder={passwordPlaceholder.value}
 											value={passwordField.state.value}
 											onValueChange={passwordField.handleChange}
 											onBlur={passwordField.handleBlur}
@@ -187,8 +211,8 @@ const LoginPage = memo(() => {
 													radius="full"
 													aria-label={
 														showPasswordField.state.value
-															? 'Hide password'
-															: 'Show password'
+															? hidePassword.value
+															: showPassword.value
 													}
 													onPress={toggleShowPassword}
 													className={cn('text-foreground-500')}
@@ -216,7 +240,7 @@ const LoginPage = memo(() => {
 										variant="faded"
 										className={cn('mb-2 text-small')}
 									>
-										Why not try Google sign-in? It's easier!
+										{tryGoogle}
 									</Alert>
 								)
 							}
@@ -231,7 +255,7 @@ const LoginPage = memo(() => {
 										onValueChange={field.handleChange}
 										classNames={{ label: 'text-foreground-600' }}
 									>
-										Remember me
+										{rememberMe}
 									</Checkbox>
 								)}
 							</loginForm.Field>
@@ -241,7 +265,7 @@ const LoginPage = memo(() => {
 								href="/auth/forgot-password"
 								underline="hover"
 							>
-								Forgot your password?
+								{forgotPassword}
 							</Link>
 						</div>
 
@@ -259,7 +283,7 @@ const LoginPage = memo(() => {
 										endContent={<ArrowRightIcon size={18} />}
 										className={cn('mt-1')}
 									>
-										Sign in
+										{signIn}
 									</Button>
 								)}
 							</loginForm.Subscribe>
@@ -270,7 +294,7 @@ const LoginPage = memo(() => {
 								</div>
 								<div className={cn('relative flex justify-center text-small')}>
 									<span className={cn('bg-content1 px-2 text-foreground-500')}>
-										Or continue with other methods
+										{orContinueWith}
 									</span>
 								</div>
 							</div>
@@ -286,15 +310,15 @@ const LoginPage = memo(() => {
 								onPress={handleGoogleSubmit}
 								className={cn('mt-1')}
 							>
-								Continue with Google
+								{continueWithGoogle}
 							</Button>
 						</div>
 					</Form>
 
 					<p className={cn('text-foreground-500 text-small')}>
-						Don't have an account?{' '}
+						{noAccount}{' '}
 						<Link href="/auth/register" color="primary" underline="hover">
-							Create account
+							{createAccount}
 						</Link>
 					</p>
 				</CardBody>

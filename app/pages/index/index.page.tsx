@@ -1,6 +1,8 @@
 import { Button, cn } from '@heroui/react';
 import { useLogoutMutation, useSession } from '@providers/session.provider';
+import { LocaleSwitcher } from '@shared/components/locale-switcher/locale-switcher.component';
 import { memo, useCallback } from 'react';
+import { useIntlayer } from 'react-intlayer';
 
 export function meta() {
 	return [
@@ -12,6 +14,8 @@ export function meta() {
 const HomePage = memo(() => {
 	const { session } = useSession();
 	const logoutMutation = useLogoutMutation();
+	const { welcome, logout, sessionInfo, currentAccountData, yourSessionIn } =
+		useIntlayer('index');
 
 	const handleLogout = useCallback(() => {
 		logoutMutation.execute();
@@ -19,17 +23,17 @@ const HomePage = memo(() => {
 
 	return (
 		<div className={cn(['flex h-full flex-col gap-6 p-6 md:p-8'])}>
-			{/* Header */}
-			<div className={cn(['space-y-2'])}>
-				<h1 className={cn(['font-bold text-3xl text-foreground'])}>
-					Welcome, {session.data?.user?.name || 'User'}
-				</h1>
-				<p className={cn(['text-foreground-500'])}>
-					This is your session in ARSW Project
-				</p>
+			<div className={cn(['absolute top-6 right-6'])}>
+				<LocaleSwitcher />
 			</div>
 
-			{/* Main Content Card */}
+			<div className={cn(['space-y-2'])}>
+				<h1 className={cn(['font-bold text-3xl text-foreground'])}>
+					{welcome}, {session.data?.user?.name || 'User'}
+				</h1>
+				<p className={cn(['text-foreground-500'])}>{yourSessionIn}</p>
+			</div>
+
 			<div
 				className={cn([
 					'flex flex-col gap-4 rounded-large bg-content1 p-6 text-content1-foreground shadow-small',
@@ -37,9 +41,9 @@ const HomePage = memo(() => {
 				])}
 			>
 				<div className={cn(['space-y-2'])}>
-					<h2 className={cn(['font-semibold text-xl'])}>Session Information</h2>
+					<h2 className={cn(['font-semibold text-xl'])}>{sessionInfo}</h2>
 					<p className={cn(['text-foreground-500 text-small'])}>
-						Current account data:
+						{currentAccountData}
 					</p>
 				</div>
 
@@ -58,7 +62,7 @@ const HomePage = memo(() => {
 					className={cn(['w-fit'])}
 					onPress={handleLogout}
 				>
-					Sign Out
+					{logout}
 				</Button>
 			</div>
 		</div>

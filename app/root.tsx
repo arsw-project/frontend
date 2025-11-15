@@ -41,9 +41,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 		</html>
 	);
 }
-export default function App() {
+// biome-ignore lint/suspicious/noExplicitAny: Because of route params
+export default function App({ params }: any) {
+	const locale = params?.lang;
+
 	return (
-		<AppProviders>
+		<AppProviders locale={locale}>
 			<Outlet />
 		</AppProviders>
 	);

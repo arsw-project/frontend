@@ -24,3 +24,6 @@ pnpm-workspace.yaml
 # Local files
 local/
 *.local.*
+
+# Intlayer build files
+/.intlayer/
