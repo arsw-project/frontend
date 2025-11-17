@@ -23,6 +23,7 @@ type User = {
 	email: string;
 	authProvider: string;
 	providerId: string | null;
+	memberships: string[];
 	createdAt: string;
 	updatedAt: string;
 };

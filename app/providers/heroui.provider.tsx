@@ -1,4 +1,4 @@
-import { HeroUIProvider } from '@heroui/react';
+import { HeroUIProvider, ToastProvider } from '@heroui/react';
 import { memo, type ReactNode, useCallback } from 'react';
 import {
 	type NavigateFunction,
@@ -29,6 +29,7 @@ export const AppHeroUIProvider = memo(
 				useHref={useHref}
 				validationBehavior="aria"
 			>
+				<ToastProvider placement="top-center" toastOffset={120} />
 				{children}
 			</HeroUIProvider>
 		);

@@ -6,6 +6,7 @@ import {
 	DropdownMenu,
 	DropdownTrigger,
 } from '@heroui/react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { getLocalizedUrl, getPathWithoutLocale } from 'intlayer';
 import { memo, useCallback } from 'react';
 import { useLocale } from 'react-intlayer';
@@ -90,12 +91,14 @@ const LocaleSwitcher = memo(() => {
 					const flag =
 						LOCALE_FLAGS[localeItem.split('-')[0].toLowerCase()] || '🌐';
 					const code = localeItem.split('-')[0].toUpperCase();
+					const isSelected = localeItem === currentLocale;
 
 					return (
 						<DropdownItem
 							key={localeItem}
 							startContent={<span className="text-base">{flag}</span>}
-							aria-current={currentLocale === localeItem ? 'page' : undefined}
+							endContent={isSelected ? <CheckIcon size={16} /> : null}
+							aria-current={isSelected ? 'page' : undefined}
 						>
 							{code}
 						</DropdownItem>
