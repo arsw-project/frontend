@@ -224,6 +224,52 @@ const usersContent = {
 			en: 'User Information',
 			es: 'Información del Usuario',
 		}),
+
+		// Filter and export options
+		filterByRole: t({
+			en: 'Filter by Role',
+			es: 'Filtrar por Rol',
+		}),
+		filterByProvider: t({
+			en: 'Filter by Provider',
+			es: 'Filtrar por Proveedor',
+		}),
+		clearFilters: t({
+			en: 'Clear Filters',
+			es: 'Limpiar Filtros',
+		}),
+		exportCSV: t({
+			en: 'Export to CSV',
+			es: 'Exportar a CSV',
+		}),
+		allRoles: t({
+			en: 'All Roles',
+			es: 'Todos los Roles',
+		}),
+		allProviders: t({
+			en: 'All Providers',
+			es: 'Todos los Proveedores',
+		}),
+		roleDistribution: t({
+			en: 'Role Distribution',
+			es: 'Distribución de Roles',
+		}),
+		providerDistribution: t({
+			en: 'Provider Distribution',
+			es: 'Distribución de Proveedores',
+		}),
+		percentageOfTotal: t({
+			en: '% of total',
+			es: '% del total',
+		}),
+		analytics: t({
+			en: 'Analytics',
+			es: 'Analítica',
+		}),
+		distributionCharts: t({
+			en: 'Distribution Charts',
+			es: 'Gráficos de Distribución',
+		}),
 	},
 } satisfies Dictionary;
 

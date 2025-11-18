@@ -95,7 +95,7 @@ importers:
         version: 6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)
       vite-intlayer:
         specifier: ^7.0.8
-        version: 7.0.8(@babel/core@7.28.5)(@intlayer/chokidar@7.0.8)(@intlayer/cli@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/dictionaries-entry@7.0.8)(@intlayer/types@7.0.8)(vite@6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2))
+        version: 7.0.8(@babel/core@7.20.5)(@intlayer/chokidar@7.0.8)(@intlayer/cli@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/dictionaries-entry@7.0.8)(@intlayer/types@7.0.8)(vite@6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2))
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.9.3)(vite@6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2))
@@ -8270,7 +8270,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-intlayer@7.0.8(@babel/core@7.28.5)(@intlayer/chokidar@7.0.8)(@intlayer/cli@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/dictionaries-entry@7.0.8)(@intlayer/types@7.0.8)(vite@6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)):
+  vite-intlayer@7.0.8(@babel/core@7.20.5)(@intlayer/chokidar@7.0.8)(@intlayer/cli@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/dictionaries-entry@7.0.8)(@intlayer/types@7.0.8)(vite@6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)):
     dependencies:
       '@intlayer/babel': 7.0.8(@intlayer/chokidar@7.0.8)(@intlayer/config@7.0.8)
       '@intlayer/chokidar': 7.0.8(@intlayer/api@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/dictionaries-entry@7.0.8)(@intlayer/remote-dictionaries-entry@7.0.8)(@intlayer/types@7.0.8)(@intlayer/unmerged-dictionaries-entry@7.0.8)(fast-glob@3.3.3)
@@ -8282,7 +8282,7 @@ snapshots:
       intlayer: 7.0.8(@intlayer/cli@7.0.8)(@intlayer/config@7.0.8)(@intlayer/core@7.0.8)(@intlayer/types@7.0.8)
       vite: 6.3.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)
     optionalDependencies:
-      '@babel/core': 7.28.5
+      '@babel/core': 7.20.5
     transitivePeerDependencies:
       - '@intlayer/cli'
       - supports-color

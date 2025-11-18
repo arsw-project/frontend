@@ -29,7 +29,7 @@ export const AppHeroUIProvider = memo(
 				useHref={useHref}
 				validationBehavior="aria"
 			>
-				<ToastProvider placement="top-center" toastOffset={120} />
+				<ToastProvider placement="top-center" toastOffset={20} />
 				{children}
 			</HeroUIProvider>
 		);

@@ -16,21 +16,25 @@ import {
 	ModalFooter,
 	ModalHeader,
 	Pagination,
+	Progress,
 	Select,
 	SelectItem,
 	Spinner,
+	Tab,
 	Table,
 	TableBody,
 	TableCell,
 	TableColumn,
 	TableHeader,
 	TableRow,
+	Tabs,
 	Tooltip,
 	User,
 	useDisclosure,
 } from '@heroui/react';
 import {
 	DotsThreeVerticalIcon,
+	DownloadIcon,
 	GoogleLogoIcon,
 	MagnifyingGlassIcon,
 	PencilSimpleIcon,
@@ -83,6 +87,10 @@ const UsersPage = memo(() => {
 
 	const [filterValue, setFilterValue] = useState('');
 	const [page, setPage] = useState(1);
+	const [selectedRole, setSelectedRole] = useState<Set<string>>(new Set());
+	const [selectedProvider, setSelectedProvider] = useState<Set<string>>(
+		new Set(),
+	);
 
 	const editModal = useDisclosure();
 	const deleteModal = useDisclosure();
@@ -164,8 +172,20 @@ const UsersPage = memo(() => {
 			);
 		}
 
+		// Filter by role
+		if (selectedRole.size > 0) {
+			filtered = filtered.filter((user) => selectedRole.has(user.role));
+		}
+
+		// Filter by provider
+		if (selectedProvider.size > 0) {
+			filtered = filtered.filter((user) =>
+				selectedProvider.has(user.authProvider),
+			);
+		}
+
 		return filtered;
-	}, [usersQuery.data, filterValue]);
+	}, [usersQuery.data, filterValue, selectedRole, selectedProvider]);
 
 	const stats = useMemo(() => {
 		const users = usersQuery.data || [];
@@ -194,6 +214,41 @@ const UsersPage = memo(() => {
 		setFilterValue(value);
 		setPage(1);
 	}, []);
+
+	const handleExportCSV = useCallback(() => {
+		if (!usersQuery.data) return;
+
+		const headers = ['ID', 'Name', 'Email', 'Role', 'Provider', 'Created Date'];
+		const rows = usersQuery.data.map((user) => [
+			user.id,
+			user.name,
+			user.email,
+			user.role,
+			user.authProvider,
+			new Date(user.createdAt).toLocaleDateString(),
+		]);
+
+		const csvContent = [
+			headers.join(','),
+			...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+		].join('\n');
+
+		const blob = new Blob([csvContent], { type: 'text/csv' });
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+		document.body.appendChild(a);
+		a.click();
+		window.URL.revokeObjectURL(url);
+		document.body.removeChild(a);
+
+		addToast({
+			title: 'Exported successfully',
+			color: 'success',
+			timeout: 3000,
+		});
+	}, [usersQuery.data]);
 
 	const handleEditUser = useCallback(
 		(user: UserApi) => {
@@ -379,11 +434,13 @@ const UsersPage = memo(() => {
 
 	const topContent = useMemo(() => {
 		return (
-			<div className={cn(['flex items-center gap-4'])}>
+			<div
+				className={cn(['flex flex-col gap-4', 'md:flex-row md:items-center'])}
+			>
 				<Input
 					isClearable
 					classNames={{
-						base: 'w-full max-w-xs',
+						base: 'w-full md:max-w-xs',
 						inputWrapper: 'bg-default-100',
 					}}
 					placeholder={content.searchPlaceholder.value}
@@ -399,9 +456,79 @@ const UsersPage = memo(() => {
 					onClear={() => handleSearchChange('')}
 					onValueChange={handleSearchChange}
 				/>
+				<Select
+					selectionMode="multiple"
+					placeholder={content.filterByRole.value}
+					selectedKeys={selectedRole}
+					onSelectionChange={(keys) =>
+						setSelectedRole(keys as unknown as Set<string>)
+					}
+					className={cn(['w-full md:max-w-xs'])}
+					size="sm"
+					variant="flat"
+				>
+					<SelectItem key="user" textValue={content.roleUser.value}>
+						{content.roleUser}
+					</SelectItem>
+					<SelectItem key="admin" textValue={content.roleAdmin.value}>
+						{content.roleAdmin}
+					</SelectItem>
+					<SelectItem key="system" textValue={content.roleSystem.value}>
+						{content.roleSystem}
+					</SelectItem>
+				</Select>
+				<Select
+					selectionMode="multiple"
+					placeholder={content.filterByProvider.value}
+					selectedKeys={selectedProvider}
+					onSelectionChange={(keys) =>
+						setSelectedProvider(keys as unknown as Set<string>)
+					}
+					className={cn(['w-full md:max-w-xs'])}
+					size="sm"
+					variant="flat"
+				>
+					<SelectItem key="google" textValue={content.providerGoogle.value}>
+						{content.providerGoogle}
+					</SelectItem>
+					<SelectItem key="local" textValue={content.providerLocal.value}>
+						{content.providerLocal}
+					</SelectItem>
+				</Select>
+				<div className={cn(['flex gap-2'])}>
+					{(selectedRole.size > 0 || selectedProvider.size > 0) && (
+						<Button
+							size="sm"
+							variant="bordered"
+							onPress={() => {
+								setSelectedRole(new Set());
+								setSelectedProvider(new Set());
+								setPage(1);
+							}}
+						>
+							{content.clearFilters}
+						</Button>
+					)}
+					<Button
+						size="sm"
+						color="primary"
+						variant="flat"
+						startContent={<DownloadIcon size={16} />}
+						onPress={handleExportCSV}
+					>
+						{content.exportCSV}
+					</Button>
+				</div>
 			</div>
 		);
-	}, [content, filterValue, handleSearchChange]);
+	}, [
+		content,
+		filterValue,
+		handleSearchChange,
+		selectedRole,
+		selectedProvider,
+		handleExportCSV,
+	]);
 
 	const bottomContent = useMemo(() => {
 		return (
@@ -478,6 +605,7 @@ const UsersPage = memo(() => {
 		{ key: 'actions', label: content.actions },
 	];
 
+	const newLocal = 'font-semibold text-xl text-foreground';
 	return (
 		<div className={cn(['flex h-full flex-col gap-8 p-6', 'md:p-8 lg:p-10'])}>
 			<header>
@@ -495,123 +623,333 @@ const UsersPage = memo(() => {
 			</header>
 			<div className={cn(['grid grid-cols-2 gap-4', 'md:grid-cols-4'])}>
 				<Card shadow="sm" className={cn(['border-none bg-default-50'])}>
-					<CardBody className={cn(['flex flex-row items-center gap-4 p-4'])}>
-						<div
-							className={cn([
-								'flex h-10 w-10 items-center justify-center rounded-medium',
-								'bg-primary-100 text-primary',
-							])}
-						>
-							<UsersIcon size={20} weight="duotone" />
-						</div>
-						<div>
-							<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
-								{content.summaryTotalUsers}
-							</p>
-							<p className={cn(['font-semibold text-xl text-foreground'])}>
-								{stats.totalUsers}
-							</p>
-						</div>
-					</CardBody>
-				</Card>
-
-				<Card shadow="sm" className={cn(['bg-default-50 border-none'])}>
-					<CardBody className={cn(['flex flex-row items-center gap-4 p-4'])}>
-						<div
-							className={cn([
-								'flex h-10 w-10 items-center justify-center rounded-medium',
-								'bg-success-100 text-success',
-							])}
-						>
-							<ShieldCheckIcon size={20} weight="duotone" />
-						</div>
-						<div>
-							<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
-								{content.summaryAdmins}
-							</p>
-							<p className={cn(['font-semibold text-xl text-foreground'])}>
-								{stats.adminCount}
-							</p>
-						</div>
-					</CardBody>
-				</Card>
-
-				<Card shadow="sm" className={cn(['bg-default-50 border-none'])}>
-					<CardBody className={cn(['flex flex-row items-center gap-4 p-4'])}>
-						<div
-							className={cn([
-								'flex h-10 w-10 items-center justify-center rounded-medium',
-								'bg-secondary-100 text-secondary',
-							])}
-						>
-							<GoogleLogoIcon size={20} weight="duotone" />
-						</div>
-						<div>
-							<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
-								{content.summaryGoogleUsers}
-							</p>
-							<p className={cn(['font-semibold text-xl text-foreground'])}>
-								{stats.googleCount}
-							</p>
-						</div>
-					</CardBody>
-				</Card>
-
-				<Card shadow="sm" className={cn(['bg-default-50 border-none'])}>
-					<CardBody className={cn(['flex flex-row items-center gap-4 p-4'])}>
-						<div
-							className={cn([
-								'flex h-10 w-10 items-center justify-center rounded-medium',
-								'bg-warning-100 text-warning',
-							])}
-						>
-							<UserCircleIcon size={20} weight="duotone" />
-						</div>
-						<div>
-							<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
-								{content.summaryLocalUsers}
-							</p>
-							<p className={cn(['font-semibold text-xl text-foreground'])}>
-								{stats.localCount}
-							</p>
-						</div>
-					</CardBody>
-				</Card>
-			</div>
-			<div className={cn(['flex-1'])}>
-				<Table
-					aria-label="Users table"
-					isHeaderSticky
-					bottomContent={bottomContent}
-					bottomContentPlacement="outside"
-					topContent={topContent}
-					topContentPlacement="outside"
-				>
-					<TableHeader columns={columns}>
-						{(column) => (
-							<TableColumn
-								key={column.key}
-								align={column.key === 'actions' ? 'end' : 'start'}
+					<CardBody className={cn(['flex flex-col gap-3 p-4'])}>
+						<div className={cn(['flex items-center gap-3'])}>
+							<div
+								className={cn([
+									'flex h-10 w-10 items-center justify-center rounded-medium',
+									'bg-primary-100 text-primary',
+								])}
 							>
-								{column.label}
-							</TableColumn>
-						)}
-					</TableHeader>
-					<TableBody
-						items={paginatedItems}
-						emptyContent={content.noUsers}
-						loadingContent={<Spinner color="primary" size="sm" />}
-					>
-						{(item) => (
-							<TableRow key={item.id}>
-								{(columnKey) => (
-									<TableCell>{renderCell(item, columnKey as string)}</TableCell>
-								)}
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
+								<UsersIcon size={20} weight="duotone" />
+							</div>
+							<div>
+								<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
+									{content.summaryTotalUsers}
+								</p>
+								<p className={cn([newLocal])}>{stats.totalUsers}</p>
+							</div>
+						</div>
+					</CardBody>
+				</Card>
+
+				<Card shadow="sm" className={cn(['border-none bg-default-50'])}>
+					<CardBody className={cn(['flex flex-col gap-3 p-4'])}>
+						<div className={cn(['flex items-center gap-3'])}>
+							<div
+								className={cn([
+									'flex h-10 w-10 items-center justify-center rounded-medium',
+									'bg-success-100 text-success',
+								])}
+							>
+								<ShieldCheckIcon size={20} weight="duotone" />
+							</div>
+							<div>
+								<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
+									{content.summaryAdmins}
+								</p>
+								<p className={cn(['font-semibold text-foreground text-xl'])}>
+									{stats.adminCount}
+								</p>
+							</div>
+						</div>
+						<Progress
+							value={(stats.adminCount / Math.max(stats.totalUsers, 1)) * 100}
+							color="success"
+							size="sm"
+							showValueLabel={true}
+							formatOptions={{ style: 'percent', minimumFractionDigits: 0 }}
+						/>
+					</CardBody>
+				</Card>
+
+				<Card shadow="sm" className={cn(['border-none bg-default-50'])}>
+					<CardBody className={cn(['flex flex-col gap-3 p-4'])}>
+						<div className={cn(['flex items-center gap-3'])}>
+							<div
+								className={cn([
+									'flex h-10 w-10 items-center justify-center rounded-medium',
+									'bg-secondary-100 text-secondary',
+								])}
+							>
+								<GoogleLogoIcon size={20} weight="duotone" />
+							</div>
+							<div>
+								<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
+									{content.summaryGoogleUsers}
+								</p>
+								<p className={cn(['font-semibold text-foreground text-xl'])}>
+									{stats.googleCount}
+								</p>
+							</div>
+						</div>
+						<Progress
+							value={(stats.googleCount / Math.max(stats.totalUsers, 1)) * 100}
+							color="secondary"
+							size="sm"
+							showValueLabel={true}
+							formatOptions={{ style: 'percent', minimumFractionDigits: 0 }}
+						/>
+					</CardBody>
+				</Card>
+
+				<Card shadow="sm" className={cn(['border-none bg-default-50'])}>
+					<CardBody className={cn(['flex flex-col gap-3 p-4'])}>
+						<div className={cn(['flex items-center gap-3'])}>
+							<div
+								className={cn([
+									'flex h-10 w-10 items-center justify-center rounded-medium',
+									'bg-warning-100 text-warning',
+								])}
+							>
+								<UserCircleIcon size={20} weight="duotone" />
+							</div>
+							<div>
+								<p className={cn(['text-foreground-400 text-tiny uppercase'])}>
+									{content.summaryLocalUsers}
+								</p>
+								<p className={cn(['font-semibold text-foreground text-xl'])}>
+									{stats.localCount}
+								</p>
+							</div>
+						</div>
+						<Progress
+							value={(stats.localCount / Math.max(stats.totalUsers, 1)) * 100}
+							color="warning"
+							size="sm"
+							showValueLabel={true}
+							formatOptions={{ style: 'percent', minimumFractionDigits: 0 }}
+						/>
+					</CardBody>
+				</Card>
 			</div>
+			<Tabs aria-label="Users content" color="primary" variant="underlined">
+				<Tab key="users" title={content.name} className={cn(['w-full'])}>
+					<div className={cn(['mt-4 flex-1'])}>
+						<Table
+							aria-label="Users table"
+							isHeaderSticky
+							bottomContent={bottomContent}
+							bottomContentPlacement="outside"
+							topContent={topContent}
+							topContentPlacement="outside"
+						>
+							<TableHeader columns={columns}>
+								{(column) => (
+									<TableColumn
+										key={column.key}
+										align={column.key === 'actions' ? 'end' : 'start'}
+									>
+										{column.label}
+									</TableColumn>
+								)}
+							</TableHeader>
+							<TableBody
+								items={paginatedItems}
+								emptyContent={content.noUsers}
+								loadingContent={<Spinner color="primary" size="sm" />}
+							>
+								{(item) => (
+									<TableRow key={item.id}>
+										{(columnKey) => (
+											<TableCell>
+												{renderCell(item, columnKey as string)}
+											</TableCell>
+										)}
+									</TableRow>
+								)}
+							</TableBody>
+						</Table>
+					</div>
+				</Tab>
+				<Tab
+					key="analytics"
+					title={content.analytics}
+					className={cn(['w-full'])}
+				>
+					<div className={cn(['mt-6 grid gap-6', 'md:grid-cols-2'])}>
+						<Card className={cn(['border-none bg-default-50'])}>
+							<CardBody className={cn(['gap-6 p-6'])}>
+								<div>
+									<h3
+										className={cn([
+											'mb-4 font-semibold text-foreground text-lg',
+										])}
+									>
+										{content.roleDistribution}
+									</h3>
+									<div className={cn(['space-y-4'])}>
+										<div>
+											<div
+												className={cn([
+													'mb-2 flex items-center justify-between',
+												])}
+											>
+												<span
+													className={cn([
+														'font-medium text-foreground text-small',
+													])}
+												>
+													{content.roleAdmin}
+												</span>
+												<span
+													className={cn(['text-foreground-500 text-small'])}
+												>
+													{stats.adminCount} (
+													{Math.round(
+														(stats.adminCount / Math.max(stats.totalUsers, 1)) *
+															100,
+													)}
+													%)
+												</span>
+											</div>
+											<Progress
+												value={
+													(stats.adminCount / Math.max(stats.totalUsers, 1)) *
+													100
+												}
+												color="success"
+												size="md"
+												showValueLabel={false}
+											/>
+										</div>
+										<div>
+											<div
+												className={cn([
+													'mb-2 flex items-center justify-between',
+												])}
+											>
+												<span
+													className={cn([
+														'font-medium text-foreground text-small',
+													])}
+												>
+													{content.roleUser}
+												</span>
+												<span
+													className={cn(['text-foreground-500 text-small'])}
+												>
+													{stats.totalUsers - stats.adminCount} (
+													{Math.round(
+														((stats.totalUsers - stats.adminCount) /
+															Math.max(stats.totalUsers, 1)) *
+															100,
+													)}
+													%)
+												</span>
+											</div>
+											<Progress
+												value={
+													((stats.totalUsers - stats.adminCount) /
+														Math.max(stats.totalUsers, 1)) *
+													100
+												}
+												color="primary"
+												size="md"
+												showValueLabel={false}
+											/>
+										</div>
+									</div>
+								</div>
+							</CardBody>
+						</Card>
+						<Card className={cn(['border-none bg-default-50'])}>
+							<CardBody className={cn(['gap-6 p-6'])}>
+								<div>
+									<h3
+										className={cn([
+											'mb-4 font-semibold text-foreground text-lg',
+										])}
+									>
+										{content.providerDistribution}
+									</h3>
+									<div className={cn(['space-y-4'])}>
+										<div>
+											<div
+												className={cn([
+													'mb-2 flex items-center justify-between',
+												])}
+											>
+												<span
+													className={cn([
+														'font-medium text-foreground text-small',
+													])}
+												>
+													{content.providerGoogle}
+												</span>
+												<span
+													className={cn(['text-foreground-500 text-small'])}
+												>
+													{stats.googleCount} (
+													{Math.round(
+														(stats.googleCount /
+															Math.max(stats.totalUsers, 1)) *
+															100,
+													)}
+													%)
+												</span>
+											</div>
+											<Progress
+												value={
+													(stats.googleCount / Math.max(stats.totalUsers, 1)) *
+													100
+												}
+												color="secondary"
+												size="md"
+												showValueLabel={false}
+											/>
+										</div>
+										<div>
+											<div
+												className={cn([
+													'mb-2 flex items-center justify-between',
+												])}
+											>
+												<span
+													className={cn([
+														'font-medium text-foreground text-small',
+													])}
+												>
+													{content.providerLocal}
+												</span>
+												<span
+													className={cn(['text-foreground-500 text-small'])}
+												>
+													{stats.localCount} (
+													{Math.round(
+														(stats.localCount / Math.max(stats.totalUsers, 1)) *
+															100,
+													)}
+													%)
+												</span>
+											</div>
+											<Progress
+												value={
+													(stats.localCount / Math.max(stats.totalUsers, 1)) *
+													100
+												}
+												color="warning"
+												size="md"
+												showValueLabel={false}
+											/>
+										</div>
+									</div>
+								</div>
+							</CardBody>
+						</Card>
+					</div>
+				</Tab>
+			</Tabs>
 			<Modal
 				isOpen={editModal.isOpen}
 				onOpenChange={editModal.onOpenChange}
