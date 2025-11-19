@@ -20,8 +20,9 @@ import { ThemeSwitcher } from '@shared/components/theme-switcher/theme-switcher.
 import { useMediaQuery } from '@shared/hooks/media-query.hook';
 import { dataAttr } from '@shared/utility/props';
 import { motion } from 'framer-motion';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntlayer } from 'react-intlayer';
+import { useLocation } from 'react-router';
 
 interface SidebarProps {
 	userName: string;
@@ -207,6 +208,22 @@ export const Sidebar = memo(function Sidebar({
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 	const isDesktop = useMediaQuery(768);
 	const { menu, app } = useIntlayer('sidebar');
+	const location = useLocation();
+
+	// Sincronizar activeItem con la ruta actual
+	useEffect(() => {
+		const pathname = location.pathname;
+
+		if (pathname.includes('/members')) {
+			setActiveItem('members');
+		} else if (pathname.includes('/board')) {
+			setActiveItem('board');
+		} else if (pathname.includes('/settings')) {
+			setActiveItem('settings');
+		} else {
+			setActiveItem('dashboard');
+		}
+	}, [location.pathname]);
 
 	const handleItemClick = useCallback((itemId: string) => {
 		setActiveItem(itemId);

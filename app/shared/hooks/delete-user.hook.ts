@@ -29,11 +29,7 @@ const useDeleteUserMutation = (args: MutationHookArgs<undefined> = {}) => {
 
 	const execute = useCallback(
 		async (userId: string) => {
-			try {
-				return await mutation.mutateAsync(userId);
-			} catch (error) {
-				throw error;
-			}
+			return await mutation.mutateAsync(userId);
 		},
 		[mutation],
 	);
