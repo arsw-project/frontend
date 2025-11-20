@@ -1,3 +1,4 @@
+import type { UserApi } from '@pages/users/users.validators';
 import { useAxios } from '@shared/hooks/axios.hook';
 import type { ApiError } from '@shared/utility/errors';
 import type { MutationHookArgs } from '@shared/utility/mutations';
@@ -11,17 +12,6 @@ type UpdateUserPayload = {
 	email?: string;
 	password?: string;
 	role?: 'user' | 'admin' | 'system';
-};
-
-type UserApi = {
-	id: string;
-	name: string;
-	email: string;
-	authProvider: string;
-	providerId: string | null;
-	role: string;
-	createdAt: string;
-	updatedAt: string;
 };
 
 type UpdateUserResponse = {

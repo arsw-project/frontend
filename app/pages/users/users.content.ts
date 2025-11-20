@@ -130,6 +130,10 @@ const usersContent = {
 			en: 'Delete user',
 			es: 'Eliminar usuario',
 		}),
+		emailUser: t({
+			en: 'Send email',
+			es: 'Enviar correo',
+		}),
 		viewDetails: t({
 			en: 'View details',
 			es: 'Ver detalles',

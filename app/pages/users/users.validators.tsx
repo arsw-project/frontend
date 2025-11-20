@@ -2,6 +2,17 @@ import z from 'zod';
 
 export type EditUserFormState = z.infer<typeof stateSchema>;
 
+export type UserApi = {
+	id: string;
+	name: string;
+	email: string;
+	authProvider: string;
+	providerId: string | null;
+	role: string;
+	createdAt: string;
+	updatedAt: string;
+};
+
 const stateSchema = z.object({
 	name: z.string(),
 	email: z.string(),

@@ -35,6 +35,7 @@ import {
 import {
 	DotsThreeVerticalIcon,
 	DownloadIcon,
+	EnvelopeIcon,
 	GoogleLogoIcon,
 	MagnifyingGlassIcon,
 	PencilSimpleIcon,
@@ -52,7 +53,11 @@ import { dataAttr } from '@shared/utility/props';
 import { useForm } from '@tanstack/react-form';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useIntlayer } from 'react-intlayer';
-import { createEditUserForm, type EditUserFormState } from './users.validators';
+import {
+	createEditUserForm,
+	type EditUserFormState,
+	type UserApi,
+} from './users.validators';
 
 export function meta() {
 	return [
@@ -60,17 +65,6 @@ export function meta() {
 		{ name: 'description', content: 'Manage users in the system' },
 	];
 }
-
-type UserApi = {
-	id: string;
-	name: string;
-	email: string;
-	authProvider: string;
-	providerId: string | null;
-	role: string;
-	createdAt: string;
-	updatedAt: string;
-};
 
 const ROWS_PER_PAGE = 8;
 
@@ -403,6 +397,14 @@ const UsersPage = memo(() => {
 										textValue={content.editUser.value}
 									>
 										{content.editUser}
+									</DropdownItem>
+									<DropdownItem
+										key="email"
+										startContent={<EnvelopeIcon size={16} />}
+										href={`mailto:${user.email}`}
+										textValue={content.emailUser.value}
+									>
+										{content.emailUser}
 									</DropdownItem>
 									<DropdownItem
 										key="delete"

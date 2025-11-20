@@ -1,17 +1,7 @@
+import type { UserApi } from '@pages/users/users.validators';
 import { useAxios } from '@shared/hooks/axios.hook';
 import type { QueryResult } from '@shared/utility/queries';
 import { useQuery } from '@tanstack/react-query';
-
-type UserApi = {
-	id: string;
-	name: string;
-	email: string;
-	authProvider: string;
-	providerId: string | null;
-	role: string;
-	createdAt: string;
-	updatedAt: string;
-};
 
 const useUsers = (): QueryResult<UserApi[]> => {
 	const axios = useAxios();
