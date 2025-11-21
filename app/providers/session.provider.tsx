@@ -17,12 +17,15 @@ import { z } from 'zod';
 
 type LoginResponse = Awaited<ReturnType<typeof loginMutationFn>>;
 
+export type UserRole = 'user' | 'admin' | 'system';
+
 type User = {
 	id: string;
 	name: string;
 	email: string;
 	authProvider: string;
 	providerId: string | null;
+	role: UserRole;
 	memberships: string[];
 	createdAt: string;
 	updatedAt: string;

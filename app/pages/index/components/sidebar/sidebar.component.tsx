@@ -8,6 +8,7 @@ import {
 	Link,
 } from '@heroui/react';
 import {
+	BuildingIcon,
 	GearIcon,
 	HouseIcon,
 	KanbanIcon,
@@ -16,6 +17,7 @@ import {
 	UsersIcon,
 	XIcon,
 } from '@phosphor-icons/react';
+import { PermissionWrapper } from '@shared/components/permission-wrapper/permission-wrapper.component';
 import { ThemeSwitcher } from '@shared/components/theme-switcher/theme-switcher.component';
 import { useMediaQuery } from '@shared/hooks/media-query.hook';
 import { dataAttr } from '@shared/utility/props';
@@ -84,7 +86,7 @@ const SidebarContent = memo(function SidebarContent({
 	onItemClick: (id: string) => void;
 	onNavigate?: () => void;
 }) {
-	const { dashboard, members, board, settings, signOut } =
+	const { dashboard, members, organizations, board, settings, signOut } =
 		useIntlayer('sidebar');
 
 	const handleLogout = useCallback(() => {
@@ -133,7 +135,13 @@ const SidebarContent = memo(function SidebarContent({
 
 			<nav className={cn(['flex flex-1 flex-col gap-2'])}>
 				{(() => {
-					const labelMap = { dashboard, members, board, settings };
+					const labelMap = {
+						dashboard,
+						members,
+						organizations,
+						board,
+						settings,
+					};
 					return (
 						<>
 							<SidebarNavItem
@@ -145,12 +153,25 @@ const SidebarContent = memo(function SidebarContent({
 								onClick={onItemClick}
 								onNavigate={onNavigate}
 							/>
+							<PermissionWrapper
+								require={{ type: 'any', roles: ['admin', 'system'] }}
+							>
+								<SidebarNavItem
+									id="members"
+									href="/members"
+									icon={<UsersIcon size={20} weight="fill" />}
+									label={labelMap.members}
+									isActive={activeItem === 'members'}
+									onClick={onItemClick}
+									onNavigate={onNavigate}
+								/>
+							</PermissionWrapper>
 							<SidebarNavItem
-								id="members"
-								href="/members"
-								icon={<UsersIcon size={20} weight="fill" />}
-								label={labelMap.members}
-								isActive={activeItem === 'members'}
+								id="organizations"
+								href="/organizations"
+								icon={<BuildingIcon size={20} weight="fill" />}
+								label={labelMap.organizations}
+								isActive={activeItem === 'organizations'}
 								onClick={onItemClick}
 								onNavigate={onNavigate}
 							/>
@@ -164,15 +185,19 @@ const SidebarContent = memo(function SidebarContent({
 								onNavigate={onNavigate}
 							/>
 							<Divider />
-							<SidebarNavItem
-								id="settings"
-								href="/settings"
-								icon={<GearIcon size={20} weight="fill" />}
-								label={labelMap.settings}
-								isActive={activeItem === 'settings'}
-								onClick={onItemClick}
-								onNavigate={onNavigate}
-							/>
+							<PermissionWrapper
+								require={{ type: 'any', roles: ['admin', 'system'] }}
+							>
+								<SidebarNavItem
+									id="settings"
+									href="/settings"
+									icon={<GearIcon size={20} weight="fill" />}
+									label={labelMap.settings}
+									isActive={activeItem === 'settings'}
+									onClick={onItemClick}
+									onNavigate={onNavigate}
+								/>
+							</PermissionWrapper>
 						</>
 					);
 				})()}
@@ -216,6 +241,8 @@ export const Sidebar = memo(function Sidebar({
 
 		if (pathname.includes('/members')) {
 			setActiveItem('members');
+		} else if (pathname.includes('/organizations')) {
+			setActiveItem('organizations');
 		} else if (pathname.includes('/board')) {
 			setActiveItem('board');
 		} else if (pathname.includes('/settings')) {

@@ -11,6 +11,10 @@ const sidebarContent = {
 			en: 'Members',
 			es: 'Miembros',
 		}),
+		organizations: t({
+			en: 'Organizations',
+			es: 'Organizaciones',
+		}),
 		board: t({
 			en: 'Board',
 			es: 'Tablero',
