@@ -15,10 +15,9 @@ import {
 	ModalFooter,
 	ModalHeader,
 	Pagination,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
 	Progress,
+	Select,
+	SelectItem,
 	Spinner,
 	Tab,
 	Table,
@@ -44,11 +43,17 @@ import {
 	UsersIcon,
 } from '@phosphor-icons/react';
 import { FieldError } from '@shared/components/field-error/field-error.component';
+import { PermissionWrapper } from '@shared/components/permission-wrapper/permission-wrapper.component';
+import { useUsers } from '@shared/hooks/get-users.hook';
+import { useAddMemberMutation } from '@shared/hooks/organizations/add-member.hook';
 import { useCreateOrganizationMutation } from '@shared/hooks/organizations/create-organization.hook';
 import { useDeleteOrganizationMutation } from '@shared/hooks/organizations/delete-organization.hook';
 import { useOrganizationMembers } from '@shared/hooks/organizations/get-organization-members.hook';
 import { useOrganizations } from '@shared/hooks/organizations/get-organizations.hook';
-import type { OrganizationApi } from '@shared/hooks/organizations/organization.types';
+import type {
+	MembershipRole,
+	OrganizationApi,
+} from '@shared/hooks/organizations/organization.types';
 import { useUpdateOrganizationMutation } from '@shared/hooks/organizations/update-organization.hook';
 import { useErrorParser } from '@shared/utility/errors';
 import { dataAttr } from '@shared/utility/props';
@@ -90,11 +95,18 @@ const MembersCount = memo(({ organizationId }: { organizationId: string }) => {
 MembersCount.displayName = 'MembersCount';
 
 const ROWS_PER_PAGE = 8;
+const AVAILABLE_ROLES: MembershipRole[] = [
+	'owner',
+	'admin',
+	'member',
+	'viewer',
+];
 
 const OrganizationsPage = memo(() => {
 	const { parseFieldErrors } = useErrorParser();
 	const content = useIntlayer('organizations');
 	const organizationsQuery = useOrganizations();
+	const usersQuery = useUsers();
 
 	const [filterValue, setFilterValue] = useState('');
 	const [page, setPage] = useState(1);
@@ -102,8 +114,11 @@ const OrganizationsPage = memo(() => {
 	const createModal = useDisclosure();
 	const editModal = useDisclosure();
 	const deleteModal = useDisclosure();
+	const addMemberModal = useDisclosure();
 	const [selectedOrganization, setSelectedOrganization] =
 		useState<OrganizationApi | null>(null);
+	const [selectedUserId, setSelectedUserId] = useState<string>('');
+	const [selectedRole, setSelectedRole] = useState<MembershipRole>('member');
 
 	const CreateOrgForm = createOrganizationForm({
 		nameRequired: content.nameRequired.value,
@@ -152,6 +167,20 @@ const OrganizationsPage = memo(() => {
 			});
 			deleteModal.onClose();
 			setSelectedOrganization(null);
+		},
+	});
+
+	const addMemberMutation = useAddMemberMutation({
+		onSuccess: () => {
+			addToast({
+				title: content.memberAdded,
+				color: 'success',
+				timeout: 3000,
+			});
+			addMemberModal.onClose();
+			setSelectedOrganization(null);
+			setSelectedUserId('');
+			setSelectedRole('member');
 		},
 	});
 
@@ -327,6 +356,24 @@ const OrganizationsPage = memo(() => {
 		await deleteMutation.execute(selectedOrganization.id);
 	}, [deleteMutation, selectedOrganization]);
 
+	const handleAddMember = useCallback(
+		(organization: OrganizationApi) => {
+			setSelectedOrganization(organization);
+			setSelectedUserId('');
+			setSelectedRole('member');
+			addMemberModal.onOpen();
+		},
+		[addMemberModal],
+	);
+
+	const handleConfirmAddMember = useCallback(async () => {
+		if (!selectedOrganization || !selectedUserId) return;
+		await addMemberMutation.execute(selectedOrganization.id, {
+			userId: selectedUserId,
+			role: selectedRole,
+		});
+	}, [addMemberMutation, selectedOrganization, selectedUserId, selectedRole]);
+
 	const formatDate = useCallback((dateString: string) => {
 		return new Date(dateString).toLocaleDateString(undefined, {
 			year: 'numeric',
@@ -356,22 +403,13 @@ const OrganizationsPage = memo(() => {
 				case 'description': {
 					const desc = organization.description || content.noDescription;
 					return (
-						<Popover placement="top" showArrow>
-							<PopoverTrigger>
-								<span
-									className={cn([
-										'line-clamp-2 max-w-md cursor-pointer text-foreground-500 text-small transition-colors hover:text-primary',
-									])}
-								>
-									{desc}
-								</span>
-							</PopoverTrigger>
-							<PopoverContent>
-								<div className={cn(['max-w-xs px-3 py-2'])}>
-									<p className={cn(['text-foreground text-small'])}>{desc}</p>
-								</div>
-							</PopoverContent>
-						</Popover>
+						<span
+							className={cn([
+								'line-clamp-2 max-w-md text-foreground-500 text-small',
+							])}
+						>
+							{desc}
+						</span>
 					);
 				}
 				case 'members':
@@ -390,78 +428,166 @@ const OrganizationsPage = memo(() => {
 					);
 				case 'actions':
 					return (
-						<div
-							className={cn(['relative flex items-center justify-end gap-2'])}
+						<PermissionWrapper
+							require={{ type: 'any', roles: ['system'] }}
+							fallback={
+								<div
+									className={cn([
+										'relative flex items-center justify-end gap-2',
+									])}
+								>
+									<Tooltip content={content.editOrganization}>
+										<Button
+											isIconOnly
+											size="sm"
+											variant="light"
+											color="default"
+											onPress={() => handleEditOrganization(organization)}
+											className={cn(['text-foreground-500 hover:text-primary'])}
+										>
+											<PencilSimpleIcon size={18} />
+										</Button>
+									</Tooltip>
+									<Tooltip content={content.deleteOrganization} color="danger">
+										<Button
+											isIconOnly
+											size="sm"
+											variant="light"
+											color="danger"
+											onPress={() => handleDeleteOrganization(organization)}
+										>
+											<TrashIcon size={18} />
+										</Button>
+									</Tooltip>
+									<Dropdown>
+										<DropdownTrigger>
+											<Button
+												isIconOnly
+												size="sm"
+												variant="light"
+												className={cn(['text-foreground-500'])}
+											>
+												<DotsThreeVerticalIcon size={18} weight="bold" />
+											</Button>
+										</DropdownTrigger>
+										<DropdownMenu aria-label="Organization actions">
+											<DropdownItem
+												key="edit"
+												startContent={<PencilSimpleIcon size={16} />}
+												onPress={() => handleEditOrganization(organization)}
+												textValue={content.editOrganization.value}
+											>
+												{content.editOrganization}
+											</DropdownItem>
+											<DropdownItem
+												key="members"
+												startContent={<UsersIcon size={16} />}
+												textValue={content.viewMembers.value}
+											>
+												{content.viewMembers}
+											</DropdownItem>
+											<DropdownItem
+												key="delete"
+												color="danger"
+												className={cn(['text-danger'])}
+												startContent={<TrashIcon size={16} />}
+												onPress={() => handleDeleteOrganization(organization)}
+												textValue={content.deleteOrganization.value}
+											>
+												{content.deleteOrganization}
+											</DropdownItem>
+										</DropdownMenu>
+									</Dropdown>
+								</div>
+							}
 						>
-							<Tooltip content={content.editOrganization}>
-								<Button
-									isIconOnly
-									size="sm"
-									variant="light"
-									color="default"
-									onPress={() => handleEditOrganization(organization)}
-									className={cn(['text-foreground-500 hover:text-primary'])}
-								>
-									<PencilSimpleIcon size={18} />
-								</Button>
-							</Tooltip>
-							<Tooltip content={content.deleteOrganization} color="danger">
-								<Button
-									isIconOnly
-									size="sm"
-									variant="light"
-									color="danger"
-									onPress={() => handleDeleteOrganization(organization)}
-								>
-									<TrashIcon size={18} />
-								</Button>
-							</Tooltip>
-							<Dropdown>
-								<DropdownTrigger>
+							<div
+								className={cn(['relative flex items-center justify-end gap-2'])}
+							>
+								<Tooltip content={content.editOrganization}>
 									<Button
 										isIconOnly
 										size="sm"
 										variant="light"
-										className={cn(['text-foreground-500'])}
-									>
-										<DotsThreeVerticalIcon size={18} weight="bold" />
-									</Button>
-								</DropdownTrigger>
-								<DropdownMenu aria-label="Organization actions">
-									<DropdownItem
-										key="edit"
-										startContent={<PencilSimpleIcon size={16} />}
+										color="default"
 										onPress={() => handleEditOrganization(organization)}
-										textValue={content.editOrganization.value}
+										className={cn(['text-foreground-500 hover:text-primary'])}
 									>
-										{content.editOrganization}
-									</DropdownItem>
-									<DropdownItem
-										key="members"
-										startContent={<UsersIcon size={16} />}
-										textValue={content.viewMembers.value}
-									>
-										{content.viewMembers}
-									</DropdownItem>
-									<DropdownItem
-										key="delete"
+										<PencilSimpleIcon size={18} />
+									</Button>
+								</Tooltip>
+								<Tooltip content={content.deleteOrganization} color="danger">
+									<Button
+										isIconOnly
+										size="sm"
+										variant="light"
 										color="danger"
-										className={cn(['text-danger'])}
-										startContent={<TrashIcon size={16} />}
 										onPress={() => handleDeleteOrganization(organization)}
-										textValue={content.deleteOrganization.value}
 									>
-										{content.deleteOrganization}
-									</DropdownItem>
-								</DropdownMenu>
-							</Dropdown>
-						</div>
+										<TrashIcon size={18} />
+									</Button>
+								</Tooltip>
+								<Dropdown>
+									<DropdownTrigger>
+										<Button
+											isIconOnly
+											size="sm"
+											variant="light"
+											className={cn(['text-foreground-500'])}
+										>
+											<DotsThreeVerticalIcon size={18} weight="bold" />
+										</Button>
+									</DropdownTrigger>
+									<DropdownMenu aria-label="Organization actions">
+										<DropdownItem
+											key="edit"
+											startContent={<PencilSimpleIcon size={16} />}
+											onPress={() => handleEditOrganization(organization)}
+											textValue={content.editOrganization.value}
+										>
+											{content.editOrganization}
+										</DropdownItem>
+										<DropdownItem
+											key="members"
+											startContent={<UsersIcon size={16} />}
+											textValue={content.viewMembers.value}
+										>
+											{content.viewMembers}
+										</DropdownItem>
+										<DropdownItem
+											key="add-member"
+											startContent={<PlusIcon size={16} />}
+											onPress={() => handleAddMember(organization)}
+											textValue={content.addMember.value}
+										>
+											{content.addMember}
+										</DropdownItem>
+										<DropdownItem
+											key="delete"
+											color="danger"
+											className={cn(['text-danger'])}
+											startContent={<TrashIcon size={16} />}
+											onPress={() => handleDeleteOrganization(organization)}
+											textValue={content.deleteOrganization.value}
+										>
+											{content.deleteOrganization}
+										</DropdownItem>
+									</DropdownMenu>
+								</Dropdown>
+							</div>
+						</PermissionWrapper>
 					);
 				default:
 					return null;
 			}
 		},
-		[content, formatDate, handleEditOrganization, handleDeleteOrganization],
+		[
+			content,
+			formatDate,
+			handleEditOrganization,
+			handleDeleteOrganization,
+			handleAddMember,
+		],
 	);
 
 	const topContent = useMemo(() => {
@@ -1303,6 +1429,96 @@ const OrganizationsPage = memo(() => {
 									{deleteMutation.isLoading
 										? content.deleting
 										: content.confirmDelete}
+								</Button>
+							</ModalFooter>
+						</>
+					)}
+				</ModalContent>
+			</Modal>
+
+			{/* Add Member Modal */}
+			<Modal
+				isOpen={addMemberModal.isOpen}
+				onOpenChange={addMemberModal.onOpenChange}
+				size="md"
+				backdrop="blur"
+				classNames={{
+					base: 'bg-content1',
+					header: 'border-b border-divider',
+					footer: 'border-t border-divider',
+				}}
+			>
+				<ModalContent>
+					{(onClose) => (
+						<>
+							<ModalHeader>
+								<span className={cn(['font-medium text-foreground'])}>
+									{content.addMemberTitle}
+								</span>
+							</ModalHeader>
+							<ModalBody className={cn(['py-6'])}>
+								<p className={cn(['text-foreground-400 text-small', 'mb-4'])}>
+									{content.addMemberDescription}
+								</p>
+								<div className={cn(['flex flex-col gap-4'])}>
+									<Select
+										label={content.selectUser}
+										placeholder={content.selectUserPlaceholder.value}
+										selectedKeys={selectedUserId ? [selectedUserId] : []}
+										onChange={(e) => setSelectedUserId(e.target.value)}
+										variant="flat"
+										isRequired
+										size="sm"
+									>
+										{usersQuery.data?.map((user) => (
+											<SelectItem key={user.id} textValue={user.name}>
+												{user.name} ({user.email})
+											</SelectItem>
+										)) || []}
+									</Select>
+									<Select
+										label={content.selectRole}
+										placeholder={content.selectRolePlaceholder.value}
+										selectedKeys={[selectedRole]}
+										onChange={(e) =>
+											setSelectedRole(e.target.value as MembershipRole)
+										}
+										variant="flat"
+										isRequired
+										size="sm"
+									>
+										{AVAILABLE_ROLES.map((role) => (
+											<SelectItem
+												key={role}
+												textValue={content[role as keyof typeof content].value}
+											>
+												{content[role as keyof typeof content]}
+											</SelectItem>
+										))}
+									</Select>
+								</div>
+							</ModalBody>
+							<ModalFooter>
+								<Button
+									color="default"
+									variant="light"
+									onPress={onClose}
+									isDisabled={addMemberMutation.isLoading}
+									size="sm"
+								>
+									{content.cancel}
+								</Button>
+								<Button
+									color="primary"
+									onPress={handleConfirmAddMember}
+									isLoading={addMemberMutation.isLoading}
+									isDisabled={!selectedUserId || addMemberMutation.isLoading}
+									data-loading={dataAttr(addMemberMutation.isLoading)}
+									size="sm"
+								>
+									{addMemberMutation.isLoading
+										? content.adding
+										: content.addMember}
 								</Button>
 							</ModalFooter>
 						</>

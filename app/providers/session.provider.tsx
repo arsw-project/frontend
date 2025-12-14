@@ -154,7 +154,9 @@ export const useSession = () => {
 };
 
 const getSessionQueryFn = async (axios: AxiosInstance) => {
-	const response = await axios.get('/auth/me');
+	const response = await axios.get('/auth/me', {
+		withCredentials: true,
+	});
 	return response.data as Session;
 };
 

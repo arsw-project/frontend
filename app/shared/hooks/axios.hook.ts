@@ -10,6 +10,7 @@ const createAxiosInstance = (): AxiosInstance => {
 		headers: {
 			'Content-Type': 'application/json',
 		},
+		withCredentials: true,
 	});
 
 	// Request interceptor

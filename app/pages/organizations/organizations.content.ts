@@ -258,6 +258,72 @@ const organizationsContent = {
 			en: 'No description available',
 			es: 'Sin descripción disponible',
 		}),
+
+		// Add member modal
+		addMember: t({
+			en: 'Add Member',
+			es: 'Agregar Miembro',
+		}),
+		addMemberTitle: t({
+			en: 'Add Member to Organization',
+			es: 'Agregar Miembro a Organización',
+		}),
+		addMemberDescription: t({
+			en: 'Select a user and assign a role to add them to this organization',
+			es: 'Selecciona un usuario y asigna un rol para agregarlo a esta organización',
+		}),
+		selectUser: t({
+			en: 'Select user',
+			es: 'Seleccionar usuario',
+		}),
+		selectUserPlaceholder: t({
+			en: 'Choose a user...',
+			es: 'Elige un usuario...',
+		}),
+		selectRole: t({
+			en: 'Select role',
+			es: 'Seleccionar rol',
+		}),
+		selectRolePlaceholder: t({
+			en: 'Choose a role...',
+			es: 'Elige un rol...',
+		}),
+		owner: t({
+			en: 'Owner',
+			es: 'Propietario',
+		}),
+		admin: t({
+			en: 'Administrator',
+			es: 'Administrador',
+		}),
+		member: t({
+			en: 'Member',
+			es: 'Miembro',
+		}),
+		viewer: t({
+			en: 'Viewer',
+			es: 'Visualizador',
+		}),
+		memberAdded: t({
+			en: 'Member added successfully',
+			es: 'Miembro agregado exitosamente',
+		}),
+		userRequired: t({
+			en: 'User is required',
+			es: 'El usuario es requerido',
+		}),
+		roleRequired: t({
+			en: 'Role is required',
+			es: 'El rol es requerido',
+		}),
+		adding: t({
+			en: 'Adding...',
+			es: 'Agregando...',
+		}),
+		noUsersAvailable: t({
+			en: 'No users available',
+			es: 'No hay usuarios disponibles',
+		}),
 	},
 } satisfies Dictionary;
 
