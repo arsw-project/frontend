@@ -123,6 +123,38 @@ const boardContent = {
 			en: 'Create',
 			es: 'Crear',
 		}),
+		editTicketTitle: t({
+			en: 'Edit Ticket',
+			es: 'Editar Ticket',
+		}),
+		saveChanges: t({
+			en: 'Save Changes',
+			es: 'Guardar Cambios',
+		}),
+		delete: t({
+			en: 'Delete',
+			es: 'Eliminar',
+		}),
+		deleteTicketTitle: t({
+			en: 'Delete Ticket',
+			es: 'Eliminar Ticket',
+		}),
+		deleteTicketConfirm: t({
+			en: 'Are you sure you want to delete this ticket? This action cannot be undone.',
+			es: '¿Estás seguro de que quieres eliminar este ticket? Esta acción no se puede deshacer.',
+		}),
+		assignTo: t({
+			en: 'Assign to',
+			es: 'Asignar a',
+		}),
+		selectUser: t({
+			en: 'Select a user',
+			es: 'Selecciona un usuario',
+		}),
+		status: t({
+			en: 'Status',
+			es: 'Estado',
+		}),
 	},
 } satisfies Dictionary;
 
