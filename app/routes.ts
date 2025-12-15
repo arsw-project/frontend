@@ -8,6 +8,7 @@ export default [
 			'/:lang?/organizations/',
 			'pages/organizations/organizations.page.tsx',
 		),
+		route('/:lang?/board/', 'pages/board/board.page.tsx'),
 	]),
 	route(':lang?/auth/login/', 'pages/login/login.page.tsx'),
 ] satisfies RouteConfig;

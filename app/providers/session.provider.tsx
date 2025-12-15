@@ -26,7 +26,11 @@ type User = {
 	authProvider: string;
 	providerId: string | null;
 	role: UserRole;
-	memberships: string[];
+	membership: {
+		id: string;
+		organizationId: string;
+		role: UserRole;
+	} | null;
 	createdAt: string;
 	updatedAt: string;
 };
