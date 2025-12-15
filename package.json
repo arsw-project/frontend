@@ -12,6 +12,7 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
+		"@hello-pangea/dnd": "^18.0.1",
 		"@heroui/react": "^2.8.5",
 		"@phosphor-icons/react": "^2.1.10",
 		"@react-router/node": "^7.9.6",

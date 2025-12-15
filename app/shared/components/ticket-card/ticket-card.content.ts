@@ -43,6 +43,18 @@ const ticketCardContent = {
 			en: 'Updated',
 			es: 'Actualizado',
 		}),
+		priorityHigh: t({
+			en: 'High Priority',
+			es: 'Prioridad Alta',
+		}),
+		priorityMedium: t({
+			en: 'Medium Priority',
+			es: 'Prioridad Media',
+		}),
+		priorityLow: t({
+			en: 'Low Priority',
+			es: 'Prioridad Baja',
+		}),
 	},
 } satisfies Dictionary;
 

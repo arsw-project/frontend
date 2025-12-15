@@ -1,11 +1,17 @@
 import type { CreateTicketPayload } from '@pages/board/board.validators';
-import { useAxios } from '@shared/hooks/axios.hook';
 import type { ApiError } from '@shared/utility/errors';
 import type { MutationHookArgs } from '@shared/utility/mutations';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { useCallback } from 'react';
 import { z } from 'zod';
+
+const ticketsAxios = axios.create({
+	baseURL: 'http://localhost:3001',
+	timeout: 10000,
+	headers: { 'Content-Type': 'application/json' },
+	withCredentials: true,
+});
 
 export type UpdateTicketPayload = Partial<
 	Omit<CreateTicketPayload, 'orgId' | 'createdBy'>
@@ -16,7 +22,6 @@ export type UpdateTicketResponse = unknown;
 const useUpdateTicketMutation = (
 	args: MutationHookArgs<UpdateTicketResponse> = {},
 ) => {
-	const axios = useAxios();
 	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
@@ -28,10 +33,9 @@ const useUpdateTicketMutation = (
 			ticketId: string;
 			payload: UpdateTicketPayload;
 		}) => {
-			const { data } = await axios.patch<UpdateTicketResponse>(
+			const { data } = await ticketsAxios.patch<UpdateTicketResponse>(
 				`/tickets/${ticketId}`,
 				payload,
-				{ withCredentials: true },
 			);
 			return data;
 		},

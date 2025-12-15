@@ -1,9 +1,13 @@
 import {
 	addToast,
+	Avatar,
+	Badge,
 	Button,
 	Card,
 	CardBody,
+	Chip,
 	cn,
+	Divider,
 	Dropdown,
 	DropdownItem,
 	DropdownMenu,
@@ -36,9 +40,11 @@ import {
 	CalendarIcon,
 	DotsThreeVerticalIcon,
 	DownloadIcon,
+	EnvelopeIcon,
 	MagnifyingGlassIcon,
 	PencilSimpleIcon,
 	PlusIcon,
+	ShieldCheckIcon,
 	TrashIcon,
 	UsersIcon,
 } from '@phosphor-icons/react';
@@ -115,6 +121,7 @@ const OrganizationsPage = memo(() => {
 	const editModal = useDisclosure();
 	const deleteModal = useDisclosure();
 	const addMemberModal = useDisclosure();
+	const viewMembersModal = useDisclosure();
 	const [selectedOrganization, setSelectedOrganization] =
 		useState<OrganizationApi | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -366,6 +373,14 @@ const OrganizationsPage = memo(() => {
 		[addMemberModal],
 	);
 
+	const handleViewMembers = useCallback(
+		(organization: OrganizationApi) => {
+			setSelectedOrganization(organization);
+			viewMembersModal.onOpen();
+		},
+		[viewMembersModal],
+	);
+
 	const handleConfirmAddMember = useCallback(async () => {
 		if (!selectedOrganization || !selectedUserId) return;
 		await addMemberMutation.execute(selectedOrganization.id, {
@@ -550,6 +565,7 @@ const OrganizationsPage = memo(() => {
 										<DropdownItem
 											key="members"
 											startContent={<UsersIcon size={16} />}
+											onPress={() => handleViewMembers(organization)}
 											textValue={content.viewMembers.value}
 										>
 											{content.viewMembers}
@@ -1525,6 +1541,336 @@ const OrganizationsPage = memo(() => {
 					)}
 				</ModalContent>
 			</Modal>
+
+			{/* View Members Modal */}
+			<Modal
+				isOpen={viewMembersModal.isOpen}
+				onOpenChange={viewMembersModal.onOpenChange}
+				size="3xl"
+				backdrop="blur"
+				scrollBehavior="inside"
+				classNames={{
+					base: 'bg-gradient-to-br from-content1 to-default-100',
+					header: 'border-b border-divider/50 pb-4',
+					footer: 'border-t border-divider/50 pt-4',
+					body: 'py-6 px-6',
+				}}
+			>
+				<ModalContent>
+					{(onClose) => {
+						const membersQuery = useOrganizationMembers(
+							selectedOrganization?.id || null,
+						);
+
+						// Helper para obtener datos del usuario
+						const getUserData = (userId: string) => {
+							return usersQuery.data?.find((u) => u.id === userId);
+						};
+
+						const getUserInitials = (name: string) => {
+							return name
+								.split(' ')
+								.map((word) => word[0])
+								.join('')
+								.toUpperCase()
+								.slice(0, 2);
+						};
+
+						const getRoleBadgeColor = (role: MembershipRole) => {
+							switch (role) {
+								case 'owner':
+									return 'danger';
+								case 'admin':
+									return 'warning';
+								case 'member':
+									return 'primary';
+								case 'viewer':
+									return 'default';
+								default:
+									return 'default';
+							}
+						};
+
+						const getRoleIcon = (role: MembershipRole) => {
+							switch (role) {
+								case 'owner':
+								case 'admin':
+									return <ShieldCheckIcon size={14} weight="fill" />;
+								default:
+									return null;
+							}
+						};
+
+						return (
+							<>
+								<ModalHeader>
+									<div className={cn(['flex items-center gap-4 w-full'])}>
+										<div
+											className={cn([
+												'flex h-12 w-12 items-center justify-center rounded-full',
+												'bg-primary-100 text-primary shrink-0',
+											])}
+										>
+											<UsersIcon size={24} weight="duotone" />
+										</div>
+										<div className={cn(['flex flex-col gap-1 flex-1'])}>
+											<span className={cn(['font-semibold text-foreground text-lg'])}>
+												{content.viewMembersTitle}
+											</span>
+											{selectedOrganization && (
+												<div className={cn(['flex items-center gap-2'])}>
+													<BuildingsIcon 
+														size={14} 
+														className={cn(['text-foreground-400'])}
+														weight="duotone"
+													/>
+													<span
+														className={cn([
+															'text-foreground-500 text-small font-medium',
+														])}
+													>
+														{selectedOrganization.name}
+													</span>
+												</div>
+											)}
+										</div>
+										{membersQuery.data && membersQuery.data.length > 0 && (
+											<Chip
+												color="primary"
+												variant="flat"
+												size="lg"
+												className={cn(['font-semibold'])}
+											>
+												{membersQuery.data.length}
+											</Chip>
+										)}
+									</div>
+								</ModalHeader>
+								<ModalBody>
+									{membersQuery.isLoading && (
+										<div
+											className={cn([
+												'flex flex-col items-center justify-center gap-4 py-12',
+											])}
+										>
+											<Spinner size="lg" color="primary" />
+											<p className={cn(['text-foreground-500 text-small font-medium'])}>
+												{content.loadingMembers}
+											</p>
+										</div>
+									)}
+
+									{membersQuery.isError && (
+										<div
+											className={cn([
+												'flex flex-col items-center justify-center gap-4 py-12',
+												'rounded-large bg-danger-50/50 p-8',
+											])}
+										>
+											<UsersIcon
+												size={48}
+												className={cn(['text-danger-400'])}
+												weight="duotone"
+											/>
+											<p className={cn(['text-danger text-small font-medium'])}>
+												{content.error}
+											</p>
+										</div>
+									)}
+
+									{membersQuery.isSuccess && (
+										<>
+											{(!membersQuery.data || membersQuery.data.length === 0) && (
+												<div
+													className={cn([
+														'flex flex-col items-center justify-center gap-4 py-12',
+														'rounded-large bg-default-100/50 p-8',
+													])}
+												>
+													<UsersIcon
+														size={56}
+														className={cn(['text-foreground-300'])}
+														weight="duotone"
+													/>
+													<div className={cn(['text-center'])}>
+														<p className={cn(['text-foreground-600 text-small font-medium'])}>
+															{content.noMembers}
+														</p>
+														<p className={cn(['text-foreground-400 text-tiny mt-1'])}>
+															{content.addMemberDescription}
+														</p>
+													</div>
+												</div>
+											)}
+
+											{membersQuery.data && membersQuery.data.length > 0 && (
+												<div className={cn(['flex flex-col gap-4'])}>
+													<div className={cn(['grid grid-cols-1 md:grid-cols-2 gap-3'])}>
+														{membersQuery.data.map((member, index) => {
+															const userData = getUserData(member.userId);
+															const roleIcon = getRoleIcon(member.role);
+
+															return (
+																<Card
+																	key={member.id}
+																	shadow="sm"
+																	isPressable
+																	isHoverable
+																	className={cn([
+																		'border border-divider/50 bg-content1/50',
+																		'hover:border-primary/50 hover:bg-content1',
+																		'transition-all duration-200',
+																		'backdrop-blur-sm',
+																	])}
+																	style={{
+																		animationDelay: `${index * 50}ms`,
+																		animation: 'fadeIn 0.3s ease-out forwards',
+																		opacity: 0,
+																	}}
+																>
+																	<CardBody
+																		className={cn(['flex flex-row items-center gap-4 p-4'])}
+																	>
+																		<div className={cn(['relative shrink-0'])}>
+																			<Avatar
+																				name={
+																					userData?.name
+																						? getUserInitials(userData.name)
+																						: '??'
+																				}
+																				size="lg"
+																				color="primary"
+																				className={cn([
+																					'ring-2 ring-primary/20',
+																					'transition-transform hover:scale-110',
+																				])}
+																				isBordered
+																			/>
+																			{roleIcon && (
+																				<div
+																					className={cn([
+																						'absolute -bottom-1 -right-1',
+																						'flex h-6 w-6 items-center justify-center',
+																						'rounded-full bg-content1',
+																						'ring-2 ring-content1',
+																						getRoleBadgeColor(member.role) === 'danger' 
+																							? 'text-danger' 
+																							: 'text-warning',
+																					])}
+																				>
+																					{roleIcon}
+																				</div>
+																			)}
+																		</div>
+																		<div className={cn(['flex flex-1 flex-col gap-2 min-w-0'])}>
+																			<div
+																				className={cn([
+																					'flex items-center gap-2 flex-wrap',
+																				])}
+																			>
+																				<span
+																					className={cn([
+																						'font-semibold text-foreground text-base truncate',
+																					])}
+																				>
+																					{userData?.name || 'Unknown User'}
+																				</span>
+																				<Badge
+																					color={getRoleBadgeColor(member.role)}
+																					variant="flat"
+																					size="sm"
+																					className={cn(['font-medium'])}
+																				>
+																					{content[member.role as keyof typeof content]}
+																				</Badge>
+																			</div>
+																			
+																			<div className={cn(['flex flex-col gap-1.5'])}>
+																				<div
+																					className={cn([
+																						'flex items-center gap-2',
+																					])}
+																				>
+																					<EnvelopeIcon
+																						size={14}
+																						className={cn(['text-foreground-400 shrink-0'])}
+																						weight="duotone"
+																					/>
+																					<span
+																						className={cn([
+																							'text-foreground-500 text-tiny truncate',
+																						])}
+																					>
+																						{userData?.email || 'No email'}
+																					</span>
+																				</div>
+																				
+																				<div
+																					className={cn([
+																						'flex items-center gap-2',
+																					])}
+																				>
+																					<CalendarIcon
+																						size={14}
+																						className={cn(['text-foreground-400 shrink-0'])}
+																						weight="duotone"
+																					/>
+																					<span
+																						className={cn([
+																							'text-foreground-500 text-tiny',
+																						])}
+																					>
+																						{content.memberSince}:{' '}
+																						{new Date(member.createdAt).toLocaleDateString(
+																							undefined,
+																							{
+																								year: 'numeric',
+																								month: 'short',
+																								day: 'numeric',
+																							},
+																						)}
+																					</span>
+																				</div>
+																			</div>
+																		</div>
+																	</CardBody>
+																</Card>
+															);
+														})}
+													</div>
+												</div>
+											)}
+										</>
+									)}
+								</ModalBody>
+								<ModalFooter>
+									<Button
+										color="primary"
+										variant="shadow"
+										onPress={onClose}
+										size="md"
+										className={cn(['font-medium'])}
+									>
+										{content.close}
+									</Button>
+								</ModalFooter>
+							</>
+						);
+					}}
+				</ModalContent>
+			</Modal>
+			<style>{`
+				@keyframes fadeIn {
+					from {
+						opacity: 0;
+						transform: translateY(10px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+			`}</style>
 		</div>
 	);
 });

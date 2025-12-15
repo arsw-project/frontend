@@ -17,6 +17,7 @@ import {
 	UsersIcon,
 	XIcon,
 } from '@phosphor-icons/react';
+import { NotificationsMenu } from '@shared/components/notifications-menu';
 import { PermissionWrapper } from '@shared/components/permission-wrapper/permission-wrapper.component';
 import { ThemeSwitcher } from '@shared/components/theme-switcher/theme-switcher.component';
 import { useMediaQuery } from '@shared/hooks/media-query.hook';
@@ -205,7 +206,10 @@ const SidebarContent = memo(function SidebarContent({
 
 			<Divider className={cn(['my-1'])} />
 
-			<ThemeSwitcher />
+			<div className="flex items-center justify-between gap-2">
+				<ThemeSwitcher />
+				<NotificationsMenu />
+			</div>
 
 			<Divider className={cn(['my-1'])} />
 
@@ -395,7 +399,9 @@ export const Sidebar = memo(function Sidebar({
 					<h1 className={cn(['font-semibold text-foreground text-large'])}>
 						{app}
 					</h1>
-					<div className={cn(['w-10'])} />
+					<div className="flex items-center gap-1">
+						<NotificationsMenu />
+					</div>
 				</motion.div>
 			</div>
 		</>

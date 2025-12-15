@@ -1,24 +1,28 @@
-import { useAxios } from '@shared/hooks/axios.hook';
 import type { ApiError } from '@shared/utility/errors';
 import type { MutationHookArgs } from '@shared/utility/mutations';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { useCallback } from 'react';
+
+const ticketsAxios = axios.create({
+	baseURL: 'http://localhost:3001',
+	timeout: 10000,
+	headers: { 'Content-Type': 'application/json' },
+	withCredentials: true,
+});
 
 export type DeleteTicketResponse = unknown;
 
 const useDeleteTicketMutation = (
 	args: MutationHookArgs<DeleteTicketResponse> = {},
 ) => {
-	const axios = useAxios();
 	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
 		mutationKey: ['delete-ticket'],
 		mutationFn: async (ticketId: string) => {
-			const { data } = await axios.delete<DeleteTicketResponse>(
+			const { data } = await ticketsAxios.delete<DeleteTicketResponse>(
 				`/tickets/${ticketId}`,
-				{ withCredentials: true },
 			);
 			return data;
 		},
@@ -39,11 +43,7 @@ const useDeleteTicketMutation = (
 
 	const execute = useCallback(
 		async (ticketId: string) => {
-			try {
-				return await mutation.mutateAsync(ticketId);
-			} catch (error) {
-				throw error;
-			}
+			return await mutation.mutateAsync(ticketId);
 		},
 		[mutation],
 	);

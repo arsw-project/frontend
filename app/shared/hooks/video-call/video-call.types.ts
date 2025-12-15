@@ -25,10 +25,12 @@ export type Participant = {
 
 export type ChatMessage = {
 	id: string;
+	ticketId?: string;
+	orgId?: string;
 	userId: string;
 	userName: string;
 	content: string;
-	timestamp: string;
+	timestamp: Date | string;
 };
 
 // ============================================================================

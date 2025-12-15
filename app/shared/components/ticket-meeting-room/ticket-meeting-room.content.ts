@@ -139,6 +139,42 @@ const ticketMeetingRoomContent = {
 			en: 'participants',
 			es: 'participantes',
 		}),
+		expandVideo: t({
+			en: 'Expand video',
+			es: 'Ampliar video',
+		}),
+		pictureInPicture: t({
+			en: 'Picture in Picture',
+			es: 'Picture in Picture',
+		}),
+		zoomIn: t({
+			en: 'Zoom in',
+			es: 'Acercar',
+		}),
+		zoomOut: t({
+			en: 'Zoom out',
+			es: 'Alejar',
+		}),
+		resetZoom: t({
+			en: 'Reset zoom',
+			es: 'Restablecer zoom',
+		}),
+		screenShare: t({
+			en: 'Screen share',
+			es: 'Pantalla compartida',
+		}),
+		noStreamAvailable: t({
+			en: 'No stream available',
+			es: 'No hay stream disponible',
+		}),
+		screenShareActive: t({
+			en: '🎥 Screen sharing is active',
+			es: '🎥 Se está compartiendo pantalla',
+		}),
+		screenShareClickToExpand: t({
+			en: 'Click the expand button to view in fullscreen',
+			es: 'Haz clic en el botón de ampliar para ver en pantalla completa',
+		}),
 	},
 } satisfies Dictionary;
 

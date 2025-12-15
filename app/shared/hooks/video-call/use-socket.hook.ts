@@ -12,13 +12,10 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
 	const socketRef = useRef<Socket | null>(null);
 
-	// Get the base URL from environment or use default
-	const baseUrl =
-		serverUrl || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+	// Connect directly to video-call microservice on port 3002 with namespace
+	const baseUrl = serverUrl || 'http://localhost:3002';
 
-	// Build the full video-call namespace URL
-	// In nginx, /video-call is removed from the URL, but we need to include it in the frontend
-	// Example: http://localhost:3000/video-call connects to the video-call microservice
+	// Video-call microservice uses /video-call namespace
 	const fullUrl = `${baseUrl.replace(/\/$/, '')}/video-call`;
 
 	/**
@@ -31,6 +28,7 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
 		try {
 			// Create socket connection with video-call namespace
+			console.log('[Socket] Connecting to:', fullUrl);
 			const socket = io(fullUrl, {
 				transports: ['websocket'],
 				withCredentials: true, // Important for session cookie
@@ -38,11 +36,13 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
 			// Connection event handlers
 			socket.on('connect', () => {
+				console.log('[Socket] Connected successfully, socket ID:', socket.id);
 				setIsConnected(true);
 				setError(null);
 			});
 
 			socket.on('disconnect', (reason) => {
+				console.log('[Socket] Disconnected, reason:', reason);
 				setIsConnected(false);
 				if (reason === 'io server disconnect') {
 					setError('Server disconnected the connection');
@@ -50,6 +50,7 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 			});
 
 			socket.on('connect_error', (err) => {
+				console.error('[Socket] Connection error:', err);
 				setIsConnected(false);
 				setError(err.message || 'Connection error');
 			});

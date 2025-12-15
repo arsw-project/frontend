@@ -324,6 +324,48 @@ const organizationsContent = {
 			en: 'No users available',
 			es: 'No hay usuarios disponibles',
 		}),
+
+		// View members modal
+		viewMembersTitle: t({
+			en: 'Organization Members',
+			es: 'Miembros de la Organización',
+		}),
+		viewMembersDescription: t({
+			en: 'Manage members and their roles in this organization',
+			es: 'Gestiona los miembros y sus roles en esta organización',
+		}),
+		memberName: t({
+			en: 'Name',
+			es: 'Nombre',
+		}),
+		memberEmail: t({
+			en: 'Email',
+			es: 'Correo Electrónico',
+		}),
+		memberRole: t({
+			en: 'Role',
+			es: 'Rol',
+		}),
+		memberSince: t({
+			en: 'Member Since',
+			es: 'Miembro Desde',
+		}),
+		noMembers: t({
+			en: 'No members in this organization',
+			es: 'No hay miembros en esta organización',
+		}),
+		loadingMembers: t({
+			en: 'Loading members...',
+			es: 'Cargando miembros...',
+		}),
+		membersCount: t({
+			en: 'Members',
+			es: 'Miembros',
+		}),
+		close: t({
+			en: 'Close',
+			es: 'Cerrar',
+		}),
 	},
 } satisfies Dictionary;
 

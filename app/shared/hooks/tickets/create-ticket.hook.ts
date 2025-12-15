@@ -3,28 +3,32 @@ import type {
 	CreateTicketResponse,
 } from '@pages/board/board.validators';
 import { createTicketSchema } from '@pages/board/board.validators';
-import { useAxios } from '@shared/hooks/axios.hook';
 import type { ApiError } from '@shared/utility/errors';
 import type { MutationHookArgs } from '@shared/utility/mutations';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { useCallback } from 'react';
 import { z } from 'zod';
+
+const ticketsAxios = axios.create({
+	baseURL: 'http://localhost:3001',
+	timeout: 10000,
+	headers: { 'Content-Type': 'application/json' },
+	withCredentials: true,
+});
 
 const useCreateTicketMutation = (
 	args: MutationHookArgs<CreateTicketResponse> = {},
 ) => {
-	const axios = useAxios();
 	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
 		mutationKey: ['create-ticket'],
 		mutationFn: async (payload: CreateTicketPayload) => {
 			const validated = createTicketSchema.parse(payload);
-			const { data } = await axios.post<CreateTicketResponse>(
+			const { data } = await ticketsAxios.post<CreateTicketResponse>(
 				'/tickets',
 				validated,
-				{ withCredentials: true },
 			);
 			return data;
 		},

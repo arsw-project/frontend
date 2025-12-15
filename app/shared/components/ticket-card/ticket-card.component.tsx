@@ -1,4 +1,5 @@
 import {
+	Avatar,
 	Button,
 	Card,
 	CardBody,
@@ -13,13 +14,13 @@ import type { UserApi } from '@pages/users/users.validators';
 import {
 	CheckCircleIcon,
 	ClockIcon,
+	FlagIcon,
 	HashIcon,
 	TagIcon,
 	UserCircleIcon,
 	VideoCameraIcon,
 } from '@phosphor-icons/react';
 import type { TicketApi } from '@shared/hooks/tickets/ticket.types';
-import { dataAttr } from '@shared/utility/props';
 import { memo, useCallback, useMemo } from 'react';
 import { useIntlayer } from 'react-intlayer';
 
@@ -82,7 +83,49 @@ export const TicketCard = memo<TicketCardProps>(
 			const assignee = users.find((user) => user.id === ticket.assigneeId);
 			return assignee?.name || assignee?.email || null;
 		}, [ticket.assigneeId, users]);
+		const assignee = useMemo(() => {
+			if (!ticket.assigneeId) return null;
+			return users.find((user) => user.id === ticket.assigneeId);
+		}, [ticket.assigneeId, users]);
 
+		const getUserInitials = useCallback((name: string) => {
+			return name
+				.split(' ')
+				.map((word) => word[0])
+				.join('')
+				.toUpperCase()
+				.slice(0, 2);
+		}, []);
+
+		const priorityConfig = useMemo(() => {
+			const priority = ticket.difficulty;
+			switch (priority) {
+				case 'L':
+					return {
+						color: 'danger' as const,
+						icon: <FlagIcon size={14} weight="fill" className="text-danger" />,
+						label: content.priorityHigh,
+					};
+				case 'M':
+					return {
+						color: 'warning' as const,
+						icon: <FlagIcon size={14} weight="fill" className="text-warning" />,
+						label: content.priorityMedium,
+					};
+				case 'S':
+					return {
+						color: 'success' as const,
+						icon: <FlagIcon size={14} weight="fill" className="text-success" />,
+						label: content.priorityLow,
+					};
+				default:
+					return {
+						color: 'default' as const,
+						icon: <FlagIcon size={14} weight="regular" />,
+						label: content.priorityMedium,
+					};
+			}
+		}, [ticket.difficulty, content]);
 		const handleCardPress = useCallback(() => {
 			onClick?.(ticket);
 		}, [onClick, ticket]);
@@ -140,24 +183,30 @@ export const TicketCard = memo<TicketCardProps>(
 								{ticket.title}
 							</h4>
 						</Tooltip>
-						<Chip
-							color={difficultyColor}
-							variant="flat"
-							size="sm"
-							className={cn(['shrink-0'])}
-						>
-							{difficultyLabel}
-						</Chip>
+						<div className="flex items-center gap-2">
+							<Tooltip content={priorityConfig.label} delay={300}>
+								<div className="flex items-center">{priorityConfig.icon}</div>
+							</Tooltip>
+							<Chip
+								color={difficultyColor}
+								variant="flat"
+								size="sm"
+								className={cn(['shrink-0'])}
+							>
+								{difficultyLabel}
+							</Chip>
+						</div>
 					</div>
 
+					{/* Ticket ID and Timestamp */}
 					<div className={cn(['flex items-center gap-2 flex-wrap'])}>
 						<div
 							className={cn([
 								'flex items-center gap-1 text-foreground-500 text-tiny',
 							])}
 						>
-							<HashIcon size={14} weight="bold" />
-							<span className={cn(['font-mono'])}>{ticket.id.slice(0, 8)}</span>
+							<HashIcon size={14} weight="regular" />
+							<span>{ticket.id.slice(0, 8)}</span>
 						</div>
 
 						<div
@@ -253,19 +302,32 @@ export const TicketCard = memo<TicketCardProps>(
 						'flex items-center justify-between',
 					])}
 				>
-					<div
-						className={cn([
-							'flex items-center gap-1.5 text-foreground-500 text-tiny',
-						])}
-					>
-						<UserCircleIcon size={14} weight="duotone" />
-						<span
-							className={cn([assigneeName ? '' : 'italic text-foreground-400'])}
-							data-assigned={dataAttr(!!assigneeName)}
+					{assignee ? (
+						<Tooltip content={assignee.email} delay={300}>
+							<div className={cn(['flex items-center gap-2'])}>
+								<Avatar
+									size="sm"
+									name={getUserInitials(assignee.name || assignee.email)}
+									className="h-6 w-6 text-tiny"
+									showFallback
+								/>
+								<span
+									className={cn(['text-foreground-600 text-tiny font-medium'])}
+								>
+									{assignee.name || assignee.email}
+								</span>
+							</div>
+						</Tooltip>
+					) : (
+						<div
+							className={cn([
+								'flex items-center gap-2 text-foreground-400 italic',
+							])}
 						>
-							{assigneeName || content.unassigned}
-						</span>
-					</div>
+							<UserCircleIcon size={16} weight="duotone" />
+							<span className={cn(['text-tiny'])}>{content.unassigned}</span>
+						</div>
+					)}
 
 					<div className={cn(['flex items-center gap-2'])}>
 						{onOpenMeetingRoom && (

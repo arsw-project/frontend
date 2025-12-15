@@ -1,4 +1,5 @@
 import { useLogoutMutation, useSession } from '@providers/session.provider';
+import { Footer } from '@shared/components/footer';
 import { AnimatePresence } from 'framer-motion';
 import { memo, useCallback } from 'react';
 import { Navigate, Outlet } from 'react-router';
@@ -34,8 +35,11 @@ const IndexLayout = memo(() => {
 						userEmail={userEmail}
 						onLogout={handleLogout}
 					/>
-					<div className="flex-1 overflow-auto pt-16 md:pt-0">
-						<Outlet />
+					<div className="flex flex-1 flex-col overflow-auto pt-16 md:pt-0">
+						<div className="flex-1">
+							<Outlet />
+						</div>
+						<Footer />
 					</div>
 				</>
 			)}

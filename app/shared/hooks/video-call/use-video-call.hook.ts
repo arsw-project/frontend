@@ -95,18 +95,18 @@ export const useVideoCall = (
 			pc.onicecandidate = (event) => {
 				if (event.candidate && socket.isConnected) {
 					addLog(`Sending ICE candidate to ${socketId}`, 'info');
-				// Extract only required properties for backend schema
-				socket.emit('ice-candidate', {
-					targetSocketId: socketId,
-					signal: {
-						candidate: event.candidate.candidate,
-						sdpMid: event.candidate.sdpMid,
-						sdpMLineIndex: event.candidate.sdpMLineIndex,
-						usernameFragment: event.candidate.usernameFragment,
-					},
-				});
-			}
-		};
+					// Extract only required properties for backend schema
+					socket.emit('ice-candidate', {
+						targetSocketId: socketId,
+						signal: {
+							candidate: event.candidate.candidate,
+							sdpMid: event.candidate.sdpMid,
+							sdpMLineIndex: event.candidate.sdpMLineIndex,
+							usernameFragment: event.candidate.usernameFragment,
+						},
+					});
+				}
+			};
 
 			// Handle ICE connection state changes
 			pc.oniceconnectionstatechange = () => {
@@ -174,17 +174,17 @@ export const useVideoCall = (
 						});
 						await pc.setLocalDescription(offer);
 						addLog(`Sending offer to ${socketId}`, 'info');
-					// Extract only required properties for backend schema
-					const localDesc = pc.localDescription;
-					if (localDesc) {
-						socket.emit('offer', {
-							targetSocketId: socketId,
-							signal: {
-								type: localDesc.type,
-								sdp: localDesc.sdp,
-							},
-						});
-					}
+						// Extract only required properties for backend schema
+						const localDesc = pc.localDescription;
+						if (localDesc) {
+							socket.emit('offer', {
+								targetSocketId: socketId,
+								signal: {
+									type: localDesc.type,
+									sdp: localDesc.sdp,
+								},
+							});
+						}
 					} catch (err) {
 						addLog(
 							`Error creating offer: ${err instanceof Error ? err.message : 'Unknown error'}`,
@@ -261,6 +261,9 @@ export const useVideoCall = (
 			}
 
 			addLog(`Joining room for ticket ${newTicketId}`, 'info');
+			console.log('[VideoCall] Emitting join-room event:', {
+				ticketId: newTicketId,
+			});
 			setRoomState('joining');
 			setTicketId(newTicketId);
 			socket.emit('join-room', { ticketId: newTicketId });
@@ -354,17 +357,17 @@ export const useVideoCall = (
 						offerToReceiveVideo: true,
 					});
 					await pc.setLocalDescription(offer);
-				// Extract only required properties for backend schema
-				const localDesc = pc.localDescription;
-				if (localDesc) {
-					socket.emit('offer', {
-						targetSocketId: socketId,
-						signal: {
-							type: localDesc.type,
-							sdp: localDesc.sdp,
-						},
-					});
-				}
+					// Extract only required properties for backend schema
+					const localDesc = pc.localDescription;
+					if (localDesc) {
+						socket.emit('offer', {
+							targetSocketId: socketId,
+							signal: {
+								type: localDesc.type,
+								sdp: localDesc.sdp,
+							},
+						});
+					}
 					addLog(`Sent renegotiation offer to ${socketId}`, 'info');
 				} catch (err) {
 					addLog(
@@ -461,17 +464,17 @@ export const useVideoCall = (
 					// Renegotiate
 					const offer = await pc.createOffer();
 					await pc.setLocalDescription(offer);
-				// Extract only required properties for backend schema
-				const localDesc = pc.localDescription;
-				if (localDesc) {
-					socket.emit('offer', {
-						targetSocketId: socketId,
-						signal: {
-							type: localDesc.type,
-							sdp: localDesc.sdp,
-						},
-					});
-				}
+					// Extract only required properties for backend schema
+					const localDesc = pc.localDescription;
+					if (localDesc) {
+						socket.emit('offer', {
+							targetSocketId: socketId,
+							signal: {
+								type: localDesc.type,
+								sdp: localDesc.sdp,
+							},
+						});
+					}
 				}
 			}
 
@@ -495,10 +498,17 @@ export const useVideoCall = (
 	 */
 	const sendMessage = useCallback(
 		(content: string) => {
-			if (!socket.isConnected || !content.trim()) {
+			if (!socket.isConnected) {
+				console.error('[VideoCall] Cannot send message: not connected');
 				return;
 			}
 
+			if (!content.trim()) {
+				console.warn('[VideoCall] Cannot send empty message');
+				return;
+			}
+
+			console.log('[VideoCall] Sending chat message:', content.trim());
 			socket.emit('chat-message', { content: content.trim() });
 		},
 		[socket],
@@ -530,18 +540,54 @@ export const useVideoCall = (
 				`Joined room: ${data.ticketId} with ${data.participants.length} existing participants`,
 				'success',
 			);
+			console.log('[VideoCall] ===== ROOM JOINED =====');
+			console.log('[VideoCall] Room joined data:', data);
+			console.log('[VideoCall] Chat history received:', data.chatHistory);
+			console.log('[VideoCall] Chat history count:', data.chatHistory.length);
+
+			// Log each history message
+			data.chatHistory.forEach((msg, index) => {
+				console.log(`[VideoCall] History message ${index}:`, {
+					fullMessage: msg,
+					hasContent: !!(msg as any).content,
+					hasMessage: !!(msg as any).message,
+					content: (msg as any).content,
+					message: (msg as any).message,
+					timestamp: msg.timestamp,
+				});
+			});
+
 			setRoomState('joined');
 			setParticipants(data.participants);
-			setChatMessages(data.chatHistory);
+
+			// Convert timestamps to Date objects
+			// Backend sends 'createdAt', we need to map it to 'timestamp'
+			const chatHistoryWithDates = data.chatHistory.map((msg: any) => {
+				const timestamp = msg.timestamp || msg.createdAt;
+				return {
+					...msg,
+					timestamp:
+						typeof timestamp === 'string' ? new Date(timestamp) : timestamp,
+				};
+			});
+			console.log(
+				'[VideoCall] Chat history with converted dates:',
+				chatHistoryWithDates,
+			);
+			console.log(
+				'[VideoCall] Setting chat messages to:',
+				chatHistoryWithDates.length,
+				'messages',
+			);
+			setChatMessages(chatHistoryWithDates);
 		};
 
 		// User joined
 		const handleUserJoined = async (data: UserJoinedPayload) => {
 			addLog(`User joined: ${data.user.name} (${data.socketId})`, 'info');
-			setParticipants((prev) => [
-				...prev,
-				{ socketId: data.socketId, user: data.user },
-			]);
+			console.log('[VideoCall] User joined:', data);
+
+			setParticipants((prev) => [...prev, data]);
 
 			// Create peer connection and send offer (we're existing participant)
 			createPeerConnection(data.socketId, true, data.user.name);
@@ -550,10 +596,23 @@ export const useVideoCall = (
 		// User left
 		const handleUserLeft = (data: UserLeftPayload) => {
 			addLog(`User left: ${data.user?.name || data.socketId}`, 'info');
+			console.log('[VideoCall] User left:', data);
+
 			setParticipants((prev) =>
 				prev.filter((p) => p.socketId !== data.socketId),
 			);
-			closePeerConnection(data.socketId);
+
+			// Close and remove peer connection
+			const peer = peerConnectionsRef.current.get(data.socketId);
+			if (peer) {
+				peer.connection.close();
+				peerConnectionsRef.current.delete(data.socketId);
+				setRemoteStreams((prev) => {
+					const updated = new Map(prev);
+					updated.delete(data.socketId);
+					return updated;
+				});
+			}
 		};
 
 		// Received offer
@@ -584,13 +643,13 @@ export const useVideoCall = (
 					await pc.setLocalDescription(answer);
 					addLog(`Sending answer to ${data.senderSocketId}`, 'info');
 
-				// Extract only required properties for backend schema
-				socket.emit('answer', {
-					targetSocketId: data.senderSocketId,
-					signal: {
-						type: answer.type,
-						sdp: answer.sdp,
-					},
+					// Extract only required properties for backend schema
+					socket.emit('answer', {
+						targetSocketId: data.senderSocketId,
+						signal: {
+							type: answer.type,
+							sdp: answer.sdp,
+						},
 					});
 				} catch (err) {
 					addLog(
@@ -669,7 +728,41 @@ export const useVideoCall = (
 
 		// Chat message
 		const handleChatMessage = (msg: ChatMessage) => {
-			setChatMessages((prev) => [...prev, msg]);
+			console.log('[VideoCall] ===== CHAT MESSAGE RECEIVED =====');
+			console.log('[VideoCall] Raw message:', msg);
+			console.log('[VideoCall] Message fields:', {
+				id: msg.id,
+				userId: msg.userId,
+				userName: msg.userName,
+				content: msg.content,
+				message: (msg as any).message,
+				timestamp: msg.timestamp,
+				createdAt: (msg as any).createdAt,
+				timestampType: typeof msg.timestamp,
+			});
+
+			// Convert timestamp to Date if it's a string
+			// Backend sends 'createdAt', we need to map it to 'timestamp'
+			const timestamp = msg.timestamp || (msg as any).createdAt;
+			const messageWithDate: ChatMessage = {
+				...msg,
+				timestamp:
+					typeof timestamp === 'string' ? new Date(timestamp) : timestamp,
+			};
+
+			console.log('[VideoCall] Message with converted date:', messageWithDate);
+
+			setChatMessages((prev) => {
+				const updated = [...prev, messageWithDate];
+				console.log('[VideoCall] Previous chat messages:', prev.length, prev);
+				console.log(
+					'[VideoCall] Updated chat messages:',
+					updated.length,
+					updated,
+				);
+				return updated;
+			});
+			addLog(`New message from ${msg.userName}`, 'info');
 		};
 
 		// Screen share events
@@ -684,7 +777,13 @@ export const useVideoCall = (
 		// Error
 		const handleError = (data: { code: string; message: string }) => {
 			addLog(`Error: ${data.message} (${data.code})`, 'error');
+			console.error('[VideoCall] Server error:', data);
 			setError(data.message);
+
+			// If it's an auth error, reset room state
+			if (data.code === 'UNAUTHORIZED' || data.code === 'FORBIDDEN') {
+				setRoomState('idle');
+			}
 		};
 
 		// Register all event handlers

@@ -1,14 +1,19 @@
-import { useAxios } from '@shared/hooks/axios.hook';
 import type {
 	GetTicketsResponse,
 	TicketApi,
 } from '@shared/hooks/tickets/ticket.types';
 import type { QueryResult } from '@shared/utility/queries';
 import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+
+const ticketsAxios = axios.create({
+	baseURL: 'http://localhost:3001',
+	timeout: 10000,
+	headers: { 'Content-Type': 'application/json' },
+	withCredentials: true,
+});
 
 const useTickets = (orgId: string): QueryResult<TicketApi[]> => {
-	const axios = useAxios();
-
 	const buildUrl = (organizationId: string) => {
 		return `/tickets/organization/${organizationId}`;
 	};
@@ -16,9 +21,9 @@ const useTickets = (orgId: string): QueryResult<TicketApi[]> => {
 	const ticketsQuery = useQuery({
 		queryKey: ['tickets', orgId],
 		queryFn: async () => {
-			const { data } = await axios.get<GetTicketsResponse>(buildUrl(orgId), {
-				withCredentials: true,
-			});
+			const { data } = await ticketsAxios.get<GetTicketsResponse>(
+				buildUrl(orgId),
+			);
 			return data.tickets;
 		},
 		enabled: !!orgId,

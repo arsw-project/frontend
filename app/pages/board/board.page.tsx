@@ -1,3 +1,5 @@
+import type { DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import {
 	Badge,
 	Button,
@@ -151,57 +153,87 @@ const BoardColumn = memo<{
 					</div>
 				</CardHeader>
 
-				<CardBody
-					className={cn([
-						'px-3 sm:px-4 md:px-5',
-						'py-3 sm:py-4 md:py-5',
-						'flex flex-col gap-3 sm:gap-4',
-						'min-h-[300px] sm:min-h-[400px] md:min-h-[500px]',
-					])}
-				>
-					{column.tickets.length === 0 ? (
-						<div
+				<Droppable droppableId={column.id}>
+					{(provided, snapshot) => (
+						<CardBody
+							ref={provided.innerRef}
+							{...provided.droppableProps}
 							className={cn([
-								'flex flex-col items-center justify-center',
-								'h-full min-h-[200px]',
-								'text-center',
+								'px-3 sm:px-4 md:px-5',
+								'py-3 sm:py-4 md:py-5',
+								'flex flex-col gap-3 sm:gap-4',
+								'min-h-[300px] sm:min-h-[400px] md:min-h-[500px]',
+								'transition-colors duration-200',
+								snapshot.isDraggingOver && 'bg-primary-50',
 							])}
 						>
-							<div
-								className={cn([
-									'mb-3 rounded-full bg-default-100 p-4 sm:mb-4 sm:p-5 md:p-6',
-								])}
-							>
-								<KanbanIcon
-									size={32}
-									weight="duotone"
-									className={cn(['text-default-400'])}
-								/>
-							</div>
-							<p
-								className={cn([
-									'text-foreground-400 text-sm sm:text-base md:text-medium',
-								])}
-							>
-								{emptyMessage}
-							</p>
-						</div>
-					) : (
-						<div className={cn(['space-y-3 sm:space-y-4'])}>
-							{column.tickets.map((ticket) => (
-								<TicketCard
-									key={ticket.id}
-									ticket={ticket}
-									users={users}
-									onClick={onTicketClick ? handleTicketCardClick : undefined}
-									onOpenMeetingRoom={
-										onOpenMeetingRoom ? handleTicketMeetingRoomClick : undefined
-									}
-								/>
-							))}
-						</div>
+							{column.tickets.length === 0 ? (
+								<div
+									className={cn([
+										'flex flex-col items-center justify-center',
+										'h-full min-h-[200px]',
+										'text-center',
+									])}
+								>
+									<div
+										className={cn([
+											'mb-3 rounded-full bg-default-100 p-4 sm:mb-4 sm:p-5 md:p-6',
+										])}
+									>
+										<KanbanIcon
+											size={32}
+											weight="duotone"
+											className={cn(['text-default-400'])}
+										/>
+									</div>
+									<p
+										className={cn([
+											'text-foreground-400 text-sm sm:text-base md:text-medium',
+										])}
+									>
+										{emptyMessage}
+									</p>
+								</div>
+							) : (
+								<div className={cn(['space-y-3 sm:space-y-4'])}>
+									{column.tickets.map((ticket, index) => (
+										<Draggable
+											key={ticket.id}
+											draggableId={ticket.id}
+											index={index}
+										>
+											{(provided, snapshot) => (
+												<div
+													ref={provided.innerRef}
+													{...provided.draggableProps}
+													{...provided.dragHandleProps}
+													className={cn([
+														snapshot.isDragging && 'rotate-2 scale-105',
+														'transition-all duration-200',
+													])}
+												>
+													<TicketCard
+														ticket={ticket}
+														users={users}
+														onClick={
+															onTicketClick ? handleTicketCardClick : undefined
+														}
+														onOpenMeetingRoom={
+															onOpenMeetingRoom
+																? handleTicketMeetingRoomClick
+																: undefined
+														}
+													/>
+												</div>
+											)}
+										</Draggable>
+									))}
+									{provided.placeholder}
+								</div>
+							)}
+						</CardBody>
 					)}
-				</CardBody>
+				</Droppable>
 			</Card>
 		);
 	},
@@ -568,6 +600,76 @@ const BoardPage = memo(() => {
 		setMeetingTicket(null);
 	}, [onCloseMeetingRoom]);
 
+	// Handle drag and drop
+	const handleDragEnd = useCallback(
+		async (result: DropResult) => {
+			const { destination, source, draggableId } = result;
+
+			// Dropped outside the list
+			if (!destination) return;
+
+			// Dropped in the same position
+			if (
+				destination.droppableId === source.droppableId &&
+				destination.index === source.index
+			) {
+				return;
+			}
+
+			// Map droppable IDs to status
+			const statusMap: Record<string, TicketStatus> = {
+				open: 'Open',
+				'in-progress': 'In Progress',
+				done: 'Done',
+			};
+
+			const newStatus = statusMap[destination.droppableId];
+			if (!newStatus) return;
+
+			// Find the ticket
+			const ticket = ticketsQuery.data?.find((t) => t.id === draggableId);
+			if (!ticket) return;
+
+			// Update ticket status
+			try {
+				await updateTicketMutation.execute(ticket.id, {
+					...ticket,
+					status: newStatus,
+				});
+			} catch (error) {
+				console.error('Failed to update ticket status:', error);
+			}
+		},
+		[ticketsQuery.data, updateTicketMutation],
+	);
+
+	// Calculate statistics
+	const statistics = useMemo(() => {
+		const tickets = ticketsQuery.data || [];
+		const total = tickets.length;
+		const byStatus = {
+			open: tickets.filter((t) => t.status === 'Open').length,
+			inProgress: tickets.filter((t) => t.status === 'In Progress').length,
+			done: tickets.filter((t) => t.status === 'Done').length,
+		};
+		const byDifficulty = {
+			small: tickets.filter((t) => t.difficulty === 'S').length,
+			medium: tickets.filter((t) => t.difficulty === 'M').length,
+			large: tickets.filter((t) => t.difficulty === 'L').length,
+		};
+		const assignedToMe = tickets.filter(
+			(t) => t.assigneeId === createdByFromSession,
+		).length;
+
+		return {
+			total,
+			byStatus,
+			byDifficulty,
+			assignedToMe,
+			completionRate: total > 0 ? Math.round((byStatus.done / total) * 100) : 0,
+		};
+	}, [ticketsQuery.data, createdByFromSession]);
+
 	return (
 		<div
 			className={cn([
@@ -576,64 +678,194 @@ const BoardPage = memo(() => {
 				'overflow-hidden',
 			])}
 		>
-			{/* Header */}
+			{/* Header with Statistics */}
 			<div
 				className={cn([
-					'flex flex-col items-start justify-between sm:flex-row sm:items-center',
+					'flex flex-col',
 					'px-4 sm:px-6 md:px-8 lg:px-10',
 					'py-4 sm:py-5 md:py-6',
 					'border-divider border-b',
-					'gap-3 sm:gap-4',
+					'gap-4',
 				])}
 			>
-				<div className={cn(['flex-1 space-y-1'])}>
-					<h1
+				{/* Title Row */}
+				<div
+					className={cn([
+						'flex flex-col items-start justify-between sm:flex-row sm:items-center gap-3 sm:gap-4',
+					])}
+				>
+					<div className={cn(['flex-1 space-y-1'])}>
+						<h1
+							className={cn([
+								'font-bold text-2xl sm:text-3xl md:text-4xl',
+								'text-foreground',
+							])}
+						>
+							{title}
+						</h1>
+						<p
+							className={cn([
+								'text-foreground-500 text-sm sm:text-base md:text-medium',
+							])}
+						>
+							{subtitle}
+						</p>
+					</div>
+				</div>
+
+				{/* Statistics Cards */}
+				<div
+					className={cn([
+						'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4',
+					])}
+				>
+					{/* Total Tickets */}
+					<Card
 						className={cn([
-							'font-bold text-2xl sm:text-3xl md:text-4xl',
-							'text-foreground',
+							'bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 shadow-sm',
 						])}
 					>
-						{title}
-					</h1>
-					<p
+						<CardBody className={cn(['p-4 flex flex-col gap-1'])}>
+							<span
+								className={cn([
+									'text-xs sm:text-sm text-foreground-600 font-medium',
+								])}
+							>
+								Total Tickets
+							</span>
+							<span
+								className={cn(['text-2xl sm:text-3xl font-bold text-primary'])}
+							>
+								{statistics.total}
+							</span>
+						</CardBody>
+					</Card>
+
+					{/* In Progress */}
+					<Card
 						className={cn([
-							'text-foreground-500 text-sm sm:text-base md:text-medium',
+							'bg-gradient-to-br from-warning-50 to-warning-100 border border-warning-200 shadow-sm',
 						])}
 					>
-						{subtitle}
-					</p>
+						<CardBody className={cn(['p-4 flex flex-col gap-1'])}>
+							<span
+								className={cn([
+									'text-xs sm:text-sm text-foreground-600 font-medium',
+								])}
+							>
+								En Progreso
+							</span>
+							<span
+								className={cn(['text-2xl sm:text-3xl font-bold text-warning'])}
+							>
+								{statistics.byStatus.inProgress}
+							</span>
+						</CardBody>
+					</Card>
+
+					{/* Completed */}
+					<Card
+						className={cn([
+							'bg-gradient-to-br from-success-50 to-success-100 border border-success-200 shadow-sm',
+						])}
+					>
+						<CardBody className={cn(['p-4 flex flex-col gap-1'])}>
+							<span
+								className={cn([
+									'text-xs sm:text-sm text-foreground-600 font-medium',
+								])}
+							>
+								Completados
+							</span>
+							<span
+								className={cn(['text-2xl sm:text-3xl font-bold text-success'])}
+							>
+								{statistics.byStatus.done}
+							</span>
+						</CardBody>
+					</Card>
+
+					{/* Assigned to Me */}
+					<Card
+						className={cn([
+							'bg-gradient-to-br from-secondary-50 to-secondary-100 border border-secondary-200 shadow-sm',
+						])}
+					>
+						<CardBody className={cn(['p-4 flex flex-col gap-1'])}>
+							<span
+								className={cn([
+									'text-xs sm:text-sm text-foreground-600 font-medium',
+								])}
+							>
+								Mis Tickets
+							</span>
+							<span
+								className={cn([
+									'text-2xl sm:text-3xl font-bold text-secondary',
+								])}
+							>
+								{statistics.assignedToMe}
+							</span>
+						</CardBody>
+					</Card>
+
+					{/* Completion Rate */}
+					<Card
+						className={cn([
+							'bg-gradient-to-br from-default-50 to-default-100 border border-default-200 shadow-sm',
+						])}
+					>
+						<CardBody className={cn(['p-4 flex flex-col gap-1'])}>
+							<span
+								className={cn([
+									'text-xs sm:text-sm text-foreground-600 font-medium',
+								])}
+							>
+								% Completado
+							</span>
+							<span
+								className={cn([
+									'text-2xl sm:text-3xl font-bold text-foreground',
+								])}
+							>
+								{statistics.completionRate}%
+							</span>
+						</CardBody>
+					</Card>
 				</div>
 			</div>
 
 			{/* Board Content */}
-			<div
-				className={cn([
-					'flex-1 overflow-x-auto overflow-y-hidden',
-					'px-4 sm:px-6 md:px-8 lg:px-10',
-					'py-4 sm:py-5 md:py-6',
-				])}
-			>
+			<DragDropContext onDragEnd={handleDragEnd}>
 				<div
 					className={cn([
-						'flex gap-4 sm:gap-5 md:gap-6',
-						'h-full',
-						'min-w-min',
+						'flex-1 overflow-x-auto overflow-y-hidden',
+						'px-4 sm:px-6 md:px-8 lg:px-10',
+						'py-4 sm:py-5 md:py-6',
 					])}
 				>
-					{columns.map((column) => (
-						<BoardColumn
-							key={column.id}
-							column={column}
-							emptyMessage={emptyColumn}
-							createTicketLabel={createTicket}
-							onCreateClick={handleCreateClick}
-							onTicketClick={handleTicketClick}
-							onOpenMeetingRoom={handleOpenTicketMeetingRoom}
-							users={usersQuery.data}
-						/>
-					))}
+					<div
+						className={cn([
+							'flex gap-4 sm:gap-5 md:gap-6',
+							'h-full',
+							'min-w-min',
+						])}
+					>
+						{columns.map((column) => (
+							<BoardColumn
+								key={column.id}
+								column={column}
+								emptyMessage={emptyColumn}
+								createTicketLabel={createTicket}
+								onCreateClick={handleCreateClick}
+								onTicketClick={handleTicketClick}
+								onOpenMeetingRoom={handleOpenTicketMeetingRoom}
+								users={usersQuery.data}
+							/>
+						))}
+					</div>
 				</div>
-			</div>
+			</DragDropContext>
 
 			{/* Create Ticket Modal */}
 			<Modal
@@ -750,30 +982,42 @@ const BoardPage = memo(() => {
 
 							{/* Assignee Field */}
 							<form.Field name="assigneeId">
-								{(field) => (
-									<Select
-										label={assignTo}
-										placeholder={selectUser.value}
-										selectedKeys={field.state.value ? [field.state.value] : []}
-										onSelectionChange={(keys) => {
-											const selected = Array.from(keys)[0];
-											field.handleChange(selected as string);
-										}}
-										color="primary"
-										variant="bordered"
-										className={cn(['w-full'])}
-										isLoading={usersQuery.isLoading}
-									>
-										{(usersQuery.data || []).map((user) => (
-											<SelectItem
-												key={user.id}
-												textValue={user.name || user.email}
-											>
-												{user.name || user.email}
-											</SelectItem>
-										))}
-									</Select>
-								)}
+								{(field) => {
+									// Filter out invalid assigneeId if user doesn't exist in the list
+									const validUsers = usersQuery.data || [];
+									const isValidAssignee = field.state.value
+										? validUsers.some((u) => u.id === field.state.value)
+										: false;
+									const selectedKeys =
+										isValidAssignee && field.state.value
+											? [field.state.value]
+											: [];
+
+									return (
+										<Select
+											label={assignTo}
+											placeholder={selectUser.value}
+											selectedKeys={selectedKeys}
+											onSelectionChange={(keys) => {
+												const selected = Array.from(keys)[0];
+												field.handleChange(selected as string);
+											}}
+											color="primary"
+											variant="bordered"
+											className={cn(['w-full'])}
+											isLoading={usersQuery.isLoading}
+										>
+											{validUsers.map((user) => (
+												<SelectItem
+													key={user.id}
+													textValue={user.name || user.email}
+												>
+													{user.name || user.email}
+												</SelectItem>
+											))}
+										</Select>
+									);
+								}}
 							</form.Field>
 
 							{/* Tags Field */}
@@ -1041,30 +1285,42 @@ const BoardPage = memo(() => {
 
 							{/* Assignee Field */}
 							<editForm.Field name="assigneeId">
-								{(field) => (
-									<Select
-										label={assignTo}
-										placeholder={selectUser.value}
-										selectedKeys={field.state.value ? [field.state.value] : []}
-										onSelectionChange={(keys) => {
-											const selected = Array.from(keys)[0];
-											field.handleChange(selected as string);
-										}}
-										color="primary"
-										variant="bordered"
-										className={cn(['w-full'])}
-										isLoading={usersQuery.isLoading}
-									>
-										{(usersQuery.data || []).map((user) => (
-											<SelectItem
-												key={user.id}
-												textValue={user.name || user.email}
-											>
-												{user.name || user.email}
-											</SelectItem>
-										))}
-									</Select>
-								)}
+								{(field) => {
+									// Filter out invalid assigneeId if user doesn't exist in the list
+									const validUsers = usersQuery.data || [];
+									const isValidAssignee = field.state.value
+										? validUsers.some((u) => u.id === field.state.value)
+										: false;
+									const selectedKeys =
+										isValidAssignee && field.state.value
+											? [field.state.value]
+											: [];
+
+									return (
+										<Select
+											label={assignTo}
+											placeholder={selectUser.value}
+											selectedKeys={selectedKeys}
+											onSelectionChange={(keys) => {
+												const selected = Array.from(keys)[0];
+												field.handleChange(selected as string);
+											}}
+											color="primary"
+											variant="bordered"
+											className={cn(['w-full'])}
+											isLoading={usersQuery.isLoading}
+										>
+											{validUsers.map((user) => (
+												<SelectItem
+													key={user.id}
+													textValue={user.name || user.email}
+												>
+													{user.name || user.email}
+												</SelectItem>
+											))}
+										</Select>
+									);
+								}}
 							</editForm.Field>
 
 							{/* Tags Field */}
