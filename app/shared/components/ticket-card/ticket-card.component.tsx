@@ -1,4 +1,5 @@
 import {
+	Button,
 	Card,
 	CardBody,
 	CardFooter,
@@ -15,15 +16,17 @@ import {
 	HashIcon,
 	TagIcon,
 	UserCircleIcon,
+	VideoCameraIcon,
 } from '@phosphor-icons/react';
 import type { TicketApi } from '@shared/hooks/tickets/ticket.types';
 import { dataAttr } from '@shared/utility/props';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useIntlayer } from 'react-intlayer';
 
 type TicketCardProps = {
 	ticket: TicketApi;
 	onClick?: (ticket: TicketApi) => void;
+	onOpenMeetingRoom?: (ticket: TicketApi) => void;
 	users?: UserApi[];
 };
 
@@ -43,8 +46,18 @@ const getDifficultyColor = (
 };
 
 export const TicketCard = memo<TicketCardProps>(
-	({ ticket, onClick, users = [] }) => {
+	({ ticket, onClick, onOpenMeetingRoom, users = [] }) => {
 		const content = useIntlayer('ticket-card');
+
+		const openMeetingRoomAriaLabel = useMemo(() => {
+			const label = content.openMeetingRoom;
+			if (typeof label === 'string') return label;
+			if (label && typeof label === 'object' && 'value' in label) {
+				const maybeValue = (label as { value?: unknown }).value;
+				if (typeof maybeValue === 'string') return maybeValue;
+			}
+			return 'Open meeting room';
+		}, [content.openMeetingRoom]);
 
 		const difficultyLabel = useMemo(() => {
 			switch (ticket.difficulty) {
@@ -70,9 +83,13 @@ export const TicketCard = memo<TicketCardProps>(
 			return assignee?.name || assignee?.email || null;
 		}, [ticket.assigneeId, users]);
 
-		const handleClick = () => {
+		const handleCardPress = useCallback(() => {
 			onClick?.(ticket);
-		};
+		}, [onClick, ticket]);
+
+		const handleMeetingRoomPress = useCallback(() => {
+			onOpenMeetingRoom?.(ticket);
+		}, [onOpenMeetingRoom, ticket]);
 
 		const formattedDate = useMemo(() => {
 			const date = new Date(ticket.updatedAt);
@@ -96,8 +113,9 @@ export const TicketCard = memo<TicketCardProps>(
 		return (
 			<Card
 				isPressable={!!onClick}
-				onPress={onClick ? handleClick : undefined}
+				onPress={onClick ? handleCardPress : undefined}
 				className={cn([
+					'group',
 					'w-full',
 					'bg-content1 border border-divider',
 					'transition-all duration-200',
@@ -249,17 +267,34 @@ export const TicketCard = memo<TicketCardProps>(
 						</span>
 					</div>
 
-					{onClick && (
-						<span
-							className={cn([
-								'text-primary text-tiny font-medium',
-								'opacity-0 group-hover:opacity-100',
-								'transition-opacity duration-200',
-							])}
-						>
-							{content.viewDetails}
-						</span>
-					)}
+					<div className={cn(['flex items-center gap-2'])}>
+						{onOpenMeetingRoom && (
+							<Tooltip content={content.openMeetingRoom} delay={500}>
+								<Button
+									isIconOnly
+									size="sm"
+									color="primary"
+									variant="flat"
+									onPress={handleMeetingRoomPress}
+									aria-label={openMeetingRoomAriaLabel}
+								>
+									<VideoCameraIcon size={18} weight="duotone" />
+								</Button>
+							</Tooltip>
+						)}
+
+						{onClick && (
+							<span
+								className={cn([
+									'text-primary text-tiny font-medium',
+									'opacity-0 group-hover:opacity-100',
+									'transition-opacity duration-200',
+								])}
+							>
+								{content.viewDetails}
+							</span>
+						)}
+					</div>
 				</CardFooter>
 			</Card>
 		);

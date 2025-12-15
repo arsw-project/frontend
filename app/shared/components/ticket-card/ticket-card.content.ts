@@ -3,6 +3,10 @@ import { type Dictionary, t } from 'intlayer';
 const ticketCardContent = {
 	key: 'ticket-card',
 	content: {
+		openMeetingRoom: t({
+			en: 'Open meeting room',
+			es: 'Abrir sala de reunión',
+		}),
 		difficultySmall: t({
 			en: 'Small',
 			es: 'Pequeña',

@@ -29,6 +29,7 @@ import { useSession } from '@providers/session.provider';
 import { AcceptanceCriteriaList } from '@shared/components/acceptance-criteria-list/acceptance-criteria-list.component';
 import { FieldError } from '@shared/components/field-error/field-error.component';
 import { TicketCard } from '@shared/components/ticket-card/ticket-card.component';
+import { TicketMeetingRoom } from '@shared/components/ticket-meeting-room/ticket-meeting-room.component';
 import { useUsers } from '@shared/hooks/get-users.hook';
 import { useCreateTicketMutation } from '@shared/hooks/tickets/create-ticket.hook';
 import { useDeleteTicketMutation } from '@shared/hooks/tickets/delete-ticket.hook';
@@ -67,6 +68,7 @@ const BoardColumn = memo<{
 	createTicketLabel: ReactNode;
 	onCreateClick: (status: TicketStatus) => void;
 	onTicketClick?: (ticketId: string) => void;
+	onOpenMeetingRoom?: (ticket: TicketApi) => void;
 	users?: UserApi[];
 }>(
 	({
@@ -75,11 +77,26 @@ const BoardColumn = memo<{
 		createTicketLabel,
 		onCreateClick,
 		onTicketClick,
+		onOpenMeetingRoom,
 		users,
 	}) => {
 		const handleCreatePress = useCallback(() => {
 			onCreateClick(column.status);
 		}, [column.status, onCreateClick]);
+
+		const handleTicketCardClick = useCallback(
+			(ticket: TicketApi) => {
+				onTicketClick?.(ticket.id);
+			},
+			[onTicketClick],
+		);
+
+		const handleTicketMeetingRoomClick = useCallback(
+			(ticket: TicketApi) => {
+				onOpenMeetingRoom?.(ticket);
+			},
+			[onOpenMeetingRoom],
+		);
 
 		return (
 			<Card
@@ -176,7 +193,10 @@ const BoardColumn = memo<{
 									key={ticket.id}
 									ticket={ticket}
 									users={users}
-									onClick={() => onTicketClick?.(ticket.id)}
+									onClick={onTicketClick ? handleTicketCardClick : undefined}
+									onOpenMeetingRoom={
+										onOpenMeetingRoom ? handleTicketMeetingRoomClick : undefined
+									}
 								/>
 							))}
 						</div>
@@ -255,6 +275,8 @@ const BoardPage = memo(() => {
 		status,
 	} = useIntlayer('board');
 
+	const meetingRoomContent = useIntlayer('ticket_meeting_room');
+
 	const TicketForm = useMemo(() => createTicketForm(), []);
 	const createTicketMutation = useCreateTicketMutation();
 	const updateTicketMutation = useUpdateTicketMutation();
@@ -264,8 +286,15 @@ const BoardPage = memo(() => {
 	const createModal = useDisclosure();
 	const editModal = useDisclosure();
 	const deleteModal = useDisclosure();
+	const {
+		isOpen: isMeetingRoomOpen,
+		onOpen: onOpenMeetingRoom,
+		onClose: onCloseMeetingRoom,
+		onOpenChange: onMeetingRoomOpenChange,
+	} = useDisclosure();
 	const [_selectedStatus, setSelectedStatus] = useState<TicketStatus>('Open');
 	const [selectedTicket, setSelectedTicket] = useState<TicketApi | null>(null);
+	const [meetingTicket, setMeetingTicket] = useState<TicketApi | null>(null);
 
 	const orgIdFromSession = session.data?.user?.membership?.organizationId ?? '';
 	const createdByFromSession = session.data?.user?.id ?? '';
@@ -518,6 +547,27 @@ const BoardPage = memo(() => {
 		[ticketsQuery.data, handleEditTicket],
 	);
 
+	const handleOpenTicketMeetingRoom = useCallback(
+		(ticket: TicketApi) => {
+			setMeetingTicket(ticket);
+			onOpenMeetingRoom();
+		},
+		[onOpenMeetingRoom],
+	);
+
+	const handleMeetingRoomModalOpenChange = useCallback(
+		(isOpen: boolean) => {
+			onMeetingRoomOpenChange();
+			if (!isOpen) setMeetingTicket(null);
+		},
+		[onMeetingRoomOpenChange],
+	);
+
+	const handleCloseMeetingRoomModal = useCallback(() => {
+		onCloseMeetingRoom();
+		setMeetingTicket(null);
+	}, [onCloseMeetingRoom]);
+
 	return (
 		<div
 			className={cn([
@@ -578,6 +628,7 @@ const BoardPage = memo(() => {
 							createTicketLabel={createTicket}
 							onCreateClick={handleCreateClick}
 							onTicketClick={handleTicketClick}
+							onOpenMeetingRoom={handleOpenTicketMeetingRoom}
 							users={usersQuery.data}
 						/>
 					))}
@@ -1145,6 +1196,62 @@ const BoardPage = memo(() => {
 								</Button>
 							)}
 						</editForm.Subscribe>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Ticket Meeting Room Modal */}
+			<Modal
+				isOpen={isMeetingRoomOpen}
+				onOpenChange={handleMeetingRoomModalOpenChange}
+				size="5xl"
+				scrollBehavior="inside"
+				backdrop="blur"
+				classNames={{
+					base: 'bg-content1',
+					header: 'border-b border-divider',
+					closeButton: 'hover:bg-default-100',
+				}}
+			>
+				<ModalContent>
+					<ModalHeader className={cn(['flex flex-col gap-1'])}>
+						<div
+							className={cn([
+								'flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between',
+								'w-full',
+							])}
+						>
+							<div className={cn(['space-y-1'])}>
+								<h2 className={cn(['font-semibold text-foreground text-xl'])}>
+									{meetingRoomContent.title}
+								</h2>
+								<p className={cn(['text-foreground-500 text-small'])}>
+									{meetingTicket?.title || meetingRoomContent.subtitle}
+								</p>
+							</div>
+							{meetingTicket?.id && (
+								<Chip color="primary" variant="flat" size="sm">
+									#{meetingTicket.id.slice(0, 8)}
+								</Chip>
+							)}
+						</div>
+					</ModalHeader>
+
+					<ModalBody className={cn(['gap-4'])}>
+						<TicketMeetingRoom
+							ticketId={meetingTicket?.id}
+							showHeader={false}
+						/>
+					</ModalBody>
+
+					<ModalFooter className={cn(['gap-2'])}>
+						<Button
+							color="default"
+							variant="light"
+							onPress={handleCloseMeetingRoomModal}
+						>
+							{meetingRoomContent.close}
+						</Button>
 					</ModalFooter>
 				</ModalContent>
 			</Modal>
